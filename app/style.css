@@ -1,0 +1,44 @@
+.bs-center {
+    text-align: center;
+}
+.bs-left {
+    text-align: left;
+}
+.bs-right {
+    text-align: right;
+}
+
+input[type="number"] {
+    width: 100px;
+}
+.incoming_data {
+    border: 2px black dashed;
+}
+
+.incoming_data legend {
+    text-align: center;
+    font-size: 24px;
+    background: transparent;
+    padding: 0px 23px 0px 23px;
+}
+
+.incoming_data div:not(.layout) {
+    margin: 10px 30px 0px 30px;
+    background: #f7f7f7;
+    padding: 13px;
+    text-align: center;
+    height: 150px;
+}
+
+.incoming_data input {
+    display: inline-block;
+    width: 132px;
+    height: 30px;
+    border: 2px black solid;
+    text-align: center;
+    border-radius: 7px;
+}
+
+.incoming_data button {
+    margin: 30px 0px 0px 0px;
+}

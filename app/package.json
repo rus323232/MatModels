@@ -1,0 +1,9 @@
+{
+  "name": "lutask",
+  "version": "0.1.0",
+  "main": "main.js",
+  "scripts": {
+    "start" : "electron ."
+  },
+  "author": "UrakovRS"
+}

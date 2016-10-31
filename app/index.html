@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Контрольная работа Мат. Методы</title>
+    <link rel="stylesheet" type="text/css" href="libs/bootsrtap-grid/bootstrap-grid-3.3.1.min.css">
+     <link rel="stylesheet" type="text/css" href="style.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 bs-center"><h1>Задание <i>№</i> 29</h1></div>
+      </div>
+        <fieldset class="incoming_data">
+          <legend>Входные данные</legend>
+            <div class="layout row">  
+              <div class="layout col-sm-6 col-xs-6 col-md-6">         
+                  <div><h3>Бюджет в (р)</h3> <input type="number" name="budget" value="110000000"> </div>
+                  <div><h3>Стоимость 1 ед. оборудования  в (р)</h3> <input type="number" name="equip_coast" value="18000000"></div>
+                  <div><h3>Стоимость 1 ед. рек. кампании в (р)</h3> <input type="number" name="ads_coast" value="15000000"></div>
+                  <div><h3>Плата клиенту за день простоя (р)</h3> <input type="number" name="pay_for_downtime" value="12000"></div>
+              </div>
+              <div class="layout col-sm-6 col-xs-6 col-md-6">
+                  <div><h3>Периодичность заявок (з/д)</h3> <input type="number" name="proposal_freq" value="4"> </div>
+                  <div><h3>На сколько реклама увеличивает периодичность з. (з/д)</h3> <input type="number" name="ads_effect" value="8"></div>
+                  <div><h3>Заявок обслуживает одна единица оборудования (з/д)</h3> <input type="number" name="equip_proposal" value="6"></div>
+                  <div><h3>Доход с каждой заявки (р)</h3> <input type="number" name="proposal_income" value="120000"></div>
+              </div>
+              <div class="layout row"> 
+                 <div class=" layout col-sm-12 col-xs-12 col-md-12 bs-center">
+                     <button type="submit" class="calculate"> Произвести вычисления </button>
+                 </div>
+              </div>
+            </div>
+        </fieldset>
+      </div>
+    </div>
+    <script src="libs/jquery-1.11.1.min.js"></script>
+  </body>
+</html>
+
