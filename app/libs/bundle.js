@@ -104,13 +104,19 @@
 	   DataSet.prototype = Publisher.prototype;
 
 	   DataSet.prototype.sendData = function (data) {
-	       var incomingData = typeof data === 'obj' ? data : {};
+	       var incomingData = typeof data === 'object' ? data : {},
+	           i;
 	       for (i in incomingData) {
-	           if (typeof incomingData[i] === 'string') {
-	               throw "Only numer type of data value";
-	           }
+	            incomingData[i] = parseInt(incomingData[i]);
+	            
+	            if (isNaN(incomingData[i])) {
+	                alert('Только целочисленные значения');
+	                return;
+	            }
+
+	          console.log(typeof incomingData[i]);
 	       } 
-	       this.trigger(data);
+	       this.trigger(incomingData);
 	   }
 
 	   return DataSet;
