@@ -1,4 +1,4 @@
-var publisher = (function () {
+var _publisher = (function () {
     function Publisher () {
         this.subscribers = {
             'any': []
@@ -22,11 +22,11 @@ var publisher = (function () {
         this.subscribers[type].push(fn);
     };
     Publisher.prototype.remove = function (fn, type) {
-        this.visitSubscribers('unsubscribe', fn, type);
+        this.visitSubscribers('remove', fn, type);
     };
 
     Publisher.prototype.trigger = function (publication, type) {
-        this.visitSubscribers('publish', publication, type);
+        this.visitSubscribers('trigger', publication, type);
     }
 
     Publisher.prototype.visitSubscribers = function (action, arg, type) {
@@ -36,7 +36,7 @@ var publisher = (function () {
             max = subscribers.length;
             
         for (i = 0; i < max; i += 1) {
-            if (action === 'publish') {
+            if (action === 'trigger') {
                 subscribers[i](arg);
             } else {
                 if (subscribers[i] === arg ) {
@@ -49,4 +49,4 @@ var publisher = (function () {
     return Publisher;
 }());
 
-module.exports = publisher;
+module.exports = _publisher;
