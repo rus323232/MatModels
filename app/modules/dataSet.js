@@ -6,20 +6,10 @@ var _dataSet = (function (){
    }
    DataSet.prototype = Publisher.prototype;
 
-   DataSet.prototype.sendData = function (data) {
-       var incomingData = typeof data === 'object' ? data : {},
-           i;
-       for (i in incomingData) {
-            incomingData[i] = parseInt(incomingData[i]);
-            
-            if (isNaN(incomingData[i])) {
-                alert('Только целочисленные значения');
-                return;
-            }
+   DataSet.prototype.sendData = function (data, type) {
+       var incomingData = typeof data === 'object' ? data : {};
 
-          console.log(typeof incomingData[i]);
-       } 
-       this.trigger(incomingData);
+       this.trigger(incomingData, type);
    }
 
    return DataSet;

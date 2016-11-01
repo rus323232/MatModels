@@ -14,22 +14,22 @@ var _publisher = (function () {
         obj.subscribers = {any: []};
     };
 
-    Publisher.prototype.on = function (fn, type) {
+    Publisher.prototype.on = function (type, callback) {
         type = type || 'any';
         if (typeof this.subscribers[type] === "undefined") {
             this.subscribers[type] = [];
         }
-        this.subscribers[type].push(fn);
+        this.subscribers[type].push(callback);
     };
-    Publisher.prototype.remove = function (fn, type) {
-        this.visitSubscribers('remove', fn, type);
+    Publisher.prototype.remove = function (type, callback) {
+        this.visitSubscribers('remove',type, callback);
     };
 
-    Publisher.prototype.trigger = function (publication, type) {
-        this.visitSubscribers('trigger', publication, type);
+    Publisher.prototype.trigger = function (type, publication) {
+        this.visitSubscribers('trigger', type, publication);
     }
 
-    Publisher.prototype.visitSubscribers = function (action, arg, type) {
+    Publisher.prototype.visitSubscribers = function (action, type, arg) {
         var pubtype = type || 'any',
             subscribers = this.subscribers[pubtype],
             i,
