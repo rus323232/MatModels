@@ -53,7 +53,7 @@
 
 	   dataSet.on('sendData', calculate.init);
 
-	   $('button').click(function (e) { 
+	   $('button').on('click keyPress', function (e) { 
 	       var usersInput = $('input'),
 	           usersInputName,
 	           usersInputValue,  
