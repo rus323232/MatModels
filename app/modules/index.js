@@ -2,10 +2,17 @@ var $ = require('jquery');
 var Publisher = require('publisher');
 var calculate = require('calculate');
 
+var dataSet = new Publisher();
+
 $('body').ready(function () {
-   dataSet = new Publisher();
 
    dataSet.on('sendData', calculate.init);
+
+/*   $('input').keyup(function (e) {
+       var notValidChar = /[$A-Za-z[!#$%&*"+,\/:-@\[-`{-~№]+/g;
+       this.value = this.value.replace(notValidChar, '');
+   });*/
+   
 
    $('button').on('click keyPress', function (e) { 
        var usersInput = $('input'),
