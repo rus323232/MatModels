@@ -45,20 +45,15 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
-	var DataSet = __webpack_require__(3);
-	var handler = {
-	    init: function (arg) {
-	        console.dir(arg);
-	    }
-	}
+	var Publisher = __webpack_require__(3);
+	var calculate = __webpack_require__(4);
 
 	$('body').ready(function () {
-	   dataSet = new DataSet ();
+	   dataSet = new Publisher();
 
-	  
-	   dataSet.on(handler.init);
+	   dataSet.on('sendData', calculate.init);
 
-	   $('button').click(function (e) { 
+	   $('button').on('click keyPress', function (e) { 
 	       var usersInput = $('input'),
 	           usersInputName,
 	           usersInputValue,  
@@ -69,7 +64,7 @@
 	          usersInputValue = usersInput.eq(i).val();
 	          answer[usersInputName] = usersInputValue;
 	       }
-	       dataSet.sendData(answer);    
+	       dataSet.trigger('sendData', answer);    
 	   });
 	});
 
@@ -93,39 +88,6 @@
 
 /***/ },
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Publisher = __webpack_require__(4);
-
-	var _dataSet = (function (){
-	   function DataSet () {
-	       Publisher.apply(this, arguments);
-	   }
-	   DataSet.prototype = Publisher.prototype;
-
-	   DataSet.prototype.sendData = function (data) {
-	       var incomingData = typeof data === 'object' ? data : {},
-	           i;
-	       for (i in incomingData) {
-	            incomingData[i] = parseInt(incomingData[i]);
-	            
-	            if (isNaN(incomingData[i])) {
-	                alert('Только целочисленные значения');
-	                return;
-	            }
-
-	          console.log(typeof incomingData[i]);
-	       } 
-	       this.trigger(incomingData);
-	   }
-
-	   return DataSet;
-	}());
-
-	module.exports = _dataSet;
-
-/***/ },
-/* 4 */
 /***/ function(module, exports) {
 
 	var _publisher = (function () {
@@ -144,22 +106,22 @@
 	        obj.subscribers = {any: []};
 	    };
 
-	    Publisher.prototype.on = function (fn, type) {
+	    Publisher.prototype.on = function (type, callback) {
 	        type = type || 'any';
 	        if (typeof this.subscribers[type] === "undefined") {
 	            this.subscribers[type] = [];
 	        }
-	        this.subscribers[type].push(fn);
+	        this.subscribers[type].push(callback);
 	    };
-	    Publisher.prototype.remove = function (fn, type) {
-	        this.visitSubscribers('remove', fn, type);
+	    Publisher.prototype.remove = function (type, callback) {
+	        this.visitSubscribers('remove',type, callback);
 	    };
 
-	    Publisher.prototype.trigger = function (publication, type) {
-	        this.visitSubscribers('trigger', publication, type);
+	    Publisher.prototype.trigger = function (type, publication) {
+	        this.visitSubscribers('trigger', type, publication);
 	    }
 
-	    Publisher.prototype.visitSubscribers = function (action, arg, type) {
+	    Publisher.prototype.visitSubscribers = function (action, type, arg) {
 	        var pubtype = type || 'any',
 	            subscribers = this.subscribers[pubtype],
 	            i,
@@ -180,6 +142,27 @@
 	}());
 
 	module.exports = _publisher;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	var _calculate = {
+	    init: function (obj) {
+	        this._incomingData = obj;
+	        for (i in this._incomingData) {
+	            this._incomingData[i] = parseInt(this._incomingData[i]);
+	            if (isNaN(this._incomingData[i])) {
+	                alert('Только целочисленные значения');
+	                return;
+	            }
+	       } 
+	        console.log(this._incomingData);
+	        alert('теперь надо посчитать это говно');
+	    },
+	};
+
+	module.exports = _calculate;
 
 /***/ }
 /******/ ]);

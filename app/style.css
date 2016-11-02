@@ -25,9 +25,9 @@ input[type="number"] {
 .incoming_data div:not(.layout) {
     margin: 10px 30px 0px 30px;
     background: #e4e4e4;
-    padding: 13px;
+    padding: 2px;
     text-align: center;
-    height: 150px;
+    height: 120px;
 }
 
 .incoming_data input {

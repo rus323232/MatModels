@@ -1,18 +1,13 @@
 var $ = require('jquery');
-var DataSet = require('dataSet');
-var handler = {
-    init: function (arg) {
-        console.dir(arg);
-    }
-}
+var Publisher = require('publisher');
+var calculate = require('calculate');
 
 $('body').ready(function () {
-   dataSet = new DataSet ();
+   dataSet = new Publisher();
 
-  
-   dataSet.on(handler.init);
+   dataSet.on('sendData', calculate.init);
 
-   $('button').click(function (e) { 
+   $('button').on('click keyPress', function (e) { 
        var usersInput = $('input'),
            usersInputName,
            usersInputValue,  
@@ -23,6 +18,6 @@ $('body').ready(function () {
           usersInputValue = usersInput.eq(i).val();
           answer[usersInputName] = usersInputValue;
        }
-       dataSet.sendData(answer);    
+       dataSet.trigger('sendData', answer);    
    });
 });
