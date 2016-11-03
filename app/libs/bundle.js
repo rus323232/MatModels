@@ -48,10 +48,17 @@
 	var Publisher = __webpack_require__(3);
 	var calculate = __webpack_require__(4);
 
+	var dataSet = new Publisher();
+
 	$('body').ready(function () {
-	   dataSet = new Publisher();
 
 	   dataSet.on('sendData', calculate.init);
+
+	/*   $('input').keyup(function (e) {
+	       var notValidChar = /[$A-Za-z[!#$%&*"+,\/:-@\[-`{-~№]+/g;
+	       this.value = this.value.replace(notValidChar, '');
+	   });*/
+	   
 
 	   $('button').on('click keyPress', function (e) { 
 	       var usersInput = $('input'),
@@ -147,6 +154,7 @@
 /* 4 */
 /***/ function(module, exports) {
 
+	
 	var _calculate = {
 	    init: function (obj) {
 	        this._incomingData = obj;
@@ -157,10 +165,22 @@
 	                return;
 	            }
 	       } 
-	        console.log(this._incomingData);
-	        alert('теперь надо посчитать это говно');
+	            var mean = 6;
+
+	            var L = Math.exp(-mean);
+	            var p = 1.0;
+	            var k = 0;
+
+	            do {
+	            k++;
+	            p *= Math.random(1, 24);
+	            console.log(k, p, L);
+	            } while (p > L);
+
+	            console.log(k-1);
 	    },
 	};
+
 
 	module.exports = _calculate;
 

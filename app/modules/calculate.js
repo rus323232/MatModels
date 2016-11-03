@@ -9,8 +9,19 @@ var _calculate = {
                 return;
             }
        } 
-        console.log(this._incomingData);
-        alert('теперь надо посчитать это говно');
+            var mean = 6;
+
+            var L = Math.exp(-mean);
+            var p = 1.0;
+            var k = 0;
+
+            do {
+            k++;
+            p *= Math.random(1, 24);
+            console.log(k, p, L);
+            } while (p > L);
+
+            console.log(k-1);
     },
 };
 
