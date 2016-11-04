@@ -6,7 +6,9 @@ var dataSet = new Publisher();
 
 $('body').ready(function () {
 
-   dataSet.on('sendData', calculate.init);
+   dataSet.on('sendData', function (arg) {
+       calculate.init(arg);
+   });
 
 /*   $('input').keyup(function (e) {
        var notValidChar = /[$A-Za-z[!#$%&*"+,\/:-@\[-`{-~№]+/g;
@@ -19,12 +21,12 @@ $('body').ready(function () {
            usersInputName,
            usersInputValue,  
            max = usersInput.length,
-           answer = {};
+           data = {};
        for (var i = 0; i < max; i++) {
           usersInputName = usersInput.eq(i).attr('name');
           usersInputValue = usersInput.eq(i).val();
-          answer[usersInputName] = usersInputValue;
+          data[usersInputName] = usersInputValue;
        }
-       dataSet.trigger('sendData', answer);    
+       dataSet.trigger('sendData', data);    
    });
 });

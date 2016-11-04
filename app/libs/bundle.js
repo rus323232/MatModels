@@ -52,7 +52,9 @@
 
 	$('body').ready(function () {
 
-	   dataSet.on('sendData', calculate.init);
+	   dataSet.on('sendData', function (arg) {
+	       calculate.init(arg);
+	   });
 
 	/*   $('input').keyup(function (e) {
 	       var notValidChar = /[$A-Za-z[!#$%&*"+,\/:-@\[-`{-~№]+/g;
@@ -65,13 +67,13 @@
 	           usersInputName,
 	           usersInputValue,  
 	           max = usersInput.length,
-	           answer = {};
+	           data = {};
 	       for (var i = 0; i < max; i++) {
 	          usersInputName = usersInput.eq(i).attr('name');
 	          usersInputValue = usersInput.eq(i).val();
-	          answer[usersInputName] = usersInputValue;
+	          data[usersInputName] = usersInputValue;
 	       }
-	       dataSet.trigger('sendData', answer);    
+	       dataSet.trigger('sendData', data);    
 	   });
 	});
 
@@ -154,7 +156,6 @@
 /* 4 */
 /***/ function(module, exports) {
 
-	
 	var _calculate = {
 	    init: function (obj) {
 	        this._incomingData = obj;
@@ -164,21 +165,54 @@
 	                alert('Только целочисленные значения');
 	                return;
 	            }
-	       } 
-	            var mean = 6;
-
-	            var L = Math.exp(-mean);
-	            var p = 1.0;
-	            var k = 0;
-
+	       }
+	       console.log(obj.proposal_freq);
+	       this._generateRandomProposal(obj.proposal_freq);
+	       
+	    },
+	    _poisson: function (lambda, count) { 
+	        var Limit = Math.exp(-lambda),
+	            answer, i;
+	        for (i = 0; i < count; i++) {
+	            var p = 0.1, k = 0;
 	            do {
 	            k++;
-	            p *= Math.random(1, 24);
-	            console.log(k, p, L);
-	            } while (p > L);
-
+	            p *= Math.random();
+	            console.log(k, p, Limit);
+	            } 
+	            while (p > Limit);
+	    
 	            console.log(k-1);
+	        }
+	       
+
+	        /*return k-1;*/
 	    },
+	    _getRandom: function (min, max) {
+	        var min = min || 1, 
+	            max = max || 24,
+	            answer;
+	            
+	        answer = Math.random() * (max - min + 1) + min;
+
+	        return answer;
+	    },
+	    _generateRandomProposal: function (freq) {
+	        var proposal_freq = freq || 4,
+	            period = 24 / proposal_freq;
+	            proposal_time = 0, i,
+	            randomTime = this._getRandom;
+	        for (i = 0; i < proposal_freq; i++) {
+
+	            proposal_time = randomTime(0, period);
+	           
+	            console.log('Period = '+period);
+	            console.log('Proposal_time'+proposal_time);
+	    
+	        }
+	      
+	    }
+
 	};
 
 
