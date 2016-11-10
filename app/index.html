@@ -5,6 +5,8 @@
     <title>Контрольная работа Мат. Методы</title>
     <link rel="stylesheet" type="text/css" href="libs/bootsrtap-grid/bootstrap-grid-3.3.1.min.css">
     <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="libs/katex.min.css">
+    <script src="libs/katex.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -28,10 +30,25 @@
               </div>
               <div class="layout row"> 
                  <div class=" layout col-sm-12 col-xs-12 col-md-12 bs-center">
+                     <div><h3> Период (д)</h3> <input type="number" name="period" value="30"></div>
+                 </div>
+              </div>
+              <div class="layout row"> 
+                 <div class=" layout col-sm-12 col-xs-12 col-md-12 bs-center">
                      <button autofocus type="submit" class="calculate"> Произвести вычисления </button>
                  </div>
               </div>
             </div>
+        </fieldset>
+        <fieldset class="result">
+          <legend> Решение </legend>
+           <div class="row">
+             <div class="col-sm-6 col-xs-6 col-md-6">
+               <div class="show_data">
+               <h3> Входные данные </h3>
+               <p class="lambda">&lambda; =  </p>
+             </div>
+           </div>
         </fieldset>
       </div>
     </div>

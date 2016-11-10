@@ -11,11 +11,12 @@
 input[type="number"] {
     width: 100px;
 }
-.incoming_data {
+fieldset {
     border: 2px black dashed;
+    margin: 2px 0px 45px 0px;
 }
 
-.incoming_data legend {
+legend {
     text-align: center;
     font-size: 24px;
     background: transparent;

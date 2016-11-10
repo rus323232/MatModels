@@ -5,7 +5,9 @@ module.exports = {
             "."
         ],
         alias: {
-            jquery: "libs/jquery-1.11.1.min"
+            jquery: "libs/jquery-1.11.1.min",
+            math: "libs/math.min",
+            katex: "libs/katex.min.js"
         }
     },
     output: {
