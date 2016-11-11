@@ -44,38 +44,40 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var $ = __webpack_require__(1);
-	var Publisher = __webpack_require__(3);
-	var calculate = __webpack_require__(4);
+	var $         = __webpack_require__(1),
+	    dataSet   = __webpack_require__(3),
+	    calculate = __webpack_require__(4),
+	    viewer    = __webpack_require__(6);
 
-	var dataSet = new Publisher();
+	dataSet.on('QTIndicators', function (a) {
+	     viewer.createQTIndicatorsTable(a);
+	} ); 
+	dataSet.on('optimalStrategy', function (a) {
+	     viewer.answerOut(a);
+	})  
+	dataSet.on('sendData', function (arg) {
+	    calculate.init(arg);
+	});
 
 	$('body').ready(function () {
-
-	   dataSet.on('sendData', function (arg) {
-	       calculate.init(arg);
-	   });
-
-	/*   $('input').keyup(function (e) {
-	       var notValidChar = /[$A-Za-z[!#$%&*"+,\/:-@\[-`{-~№]+/g;
-	       this.value = this.value.replace(notValidChar, '');
-	   });*/
-	   
-
 	   $('button').on('click keyPress', function (e) { 
 	       var usersInput = $('input'),
+	           max        = usersInput.length,
+	           data       = {},
 	           usersInputName,
-	           usersInputValue,  
-	           max = usersInput.length,
-	           data = {};
-	       for (var i = 0; i < max; i++) {
+	           usersInputValue,
+	           i;
+	          
+	       for (i = 0; i < max; i++) {
 	          usersInputName = usersInput.eq(i).attr('name');
 	          usersInputValue = usersInput.eq(i).val();
 	          data[usersInputName] = usersInputValue;
 	       }
-	       dataSet.trigger('sendData', data);    
+	       dataSet.trigger('sendData', data);
+	       $('.result').addClass('visible');    
 	   });
 	});
+
 
 /***/ },
 /* 1 */
@@ -99,56 +101,53 @@
 /* 3 */
 /***/ function(module, exports) {
 
-	var _publisher = (function () {
-	    function Publisher () {
-	        this.subscribers = {
+	var _publisher = {
+	        subscribers : {
 	            'any': []
-	        };
-	    }
-	    Publisher.makePublisher = function (obj) {
-	        var i;
-	        for (i in this.prototype) {
-	            if (this.prototype.hasOwnProperty(i) && typeof this.prototype[i] === "function") {
-	                obj.prototype[i] = this.prototype[i];
+	        },
+	        makePublisher: function (obj) {
+	            var i;
+	            for (i in this) {
+	                if (this.hasOwnProperty(i) && typeof this[i] === "function") {
+	                    obj[i] = this[i];
+	                }
 	            }
-	        }
-	        obj.subscribers = {any: []};
-	    };
-
-	    Publisher.prototype.on = function (type, callback) {
-	        type = type || 'any';
-	        if (typeof this.subscribers[type] === "undefined") {
-	            this.subscribers[type] = [];
-	        }
-	        this.subscribers[type].push(callback);
-	    };
-	    Publisher.prototype.remove = function (type, callback) {
-	        this.visitSubscribers('remove',type, callback);
-	    };
-
-	    Publisher.prototype.trigger = function (type, publication) {
-	        this.visitSubscribers('trigger', type, publication);
-	    }
-
-	    Publisher.prototype.visitSubscribers = function (action, type, arg) {
-	        var pubtype = type || 'any',
-	            subscribers = this.subscribers[pubtype],
-	            i,
-	            max = subscribers.length;
-	            
-	        for (i = 0; i < max; i += 1) {
-	            if (action === 'trigger') {
-	                subscribers[i](arg);
-	            } else {
-	                if (subscribers[i] === arg ) {
-	                    subscribers.splice(i, 1);
+	            obj.subscribers = {any: []};
+	        },
+	        on: function (type, callback) {
+	            type = type || 'any';
+	            if (typeof this.subscribers[type] === "undefined") {
+	                this.subscribers[type] = [];
+	            }
+	            this.subscribers[type].push(callback);
+	        },
+	        remove: function (type, callback) {
+	            this.visitSubscribers('remove',type, callback);
+	        },
+	        trigger: function (type, publication) {
+	            this.visitSubscribers('trigger', type, publication);
+	        },
+	        visitSubscribers: function (action, type, arg) {
+	            var pubtype = type || 'any',
+	                subscribers = this.subscribers[pubtype],
+	                i,
+	                max;
+	            if (!this.subscribers[pubtype]) {
+	                console.log("Not subscribers on: ", pubtype);
+	                return;
+	            }
+	                max = subscribers.length;
+	            for (i = 0; i < max; i += 1) {
+	                if (action === 'trigger') {
+	                    subscribers[i](arg);
+	                } else {
+	                    if (subscribers[i] === arg ) {
+	                        subscribers.splice(i, 1);
+	                    }
 	                }
 	            }
 	        }
-	    }
-
-	    return Publisher;
-	}());
+	}
 
 	module.exports = _publisher;
 
@@ -156,176 +155,174 @@
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var math = __webpack_require__(5);
+	var math = __webpack_require__(5),
+	    dataSet = __webpack_require__(3);
 
 	var _calculate = {
-	    _incomingData: {},
-	    _calcStack: {},
-	    init: function (obj) {
-	        for (i in obj) {
-	            obj[i] = parseInt(obj[i]);
-	            if (isNaN(obj[i])) {
-	                alert('Только целочисленные значения');
-	                return;
-	            }
-	       }
-	       
-	       this._incomingData = obj;
-	       this.selectOptimalStrategy();
-	      
-	    },
-	    _poisson: function (lambda, count) { 
-	        var Limit = Math.exp(-lambda),
-	            answer, i;
-	        for (i = 0; i < count; i++) {
-	            var p = 0.1, k = 0;
-	            do {
-	            k++;
-	            p *= Math.random();
-	            console.log(k, p, Limit);
-	            } 
-	            while (p > Limit);
-	    
-	            console.log(k-1);
-	        }
-	    },
-	    _generateRandomTime: function (freq) {
-	        var proposalFreq = freq || 4,
-	            period       = 24 / proposalFreq,
-	            proposalTime = 0,
-	            i,
-	            timeLine     = [];
-	        for (i = 0; i < proposalFreq; i++) {
-	            proposalTime = math.round(math.random(period), 1);
-	            timeLine[i]  = proposalTime;
-	        }
-	        
-	        return timeLine;
-	    },
-	    _calcQTIndicators: function () {
-	        var incomingData = this._incomingData;
-	        var calcStack    = this._calcStack;
-
-	        /*console.log(incomingData);*/
-	        calcStack.payForDowntime   = incomingData.pay_for_downtime;
-	        calcStack.period           = incomingData.period;
-	        calcStack.proposalIncome   = incomingData.proposal_income;
-	        calcStack.lambda           = incomingData.proposal_freq;
-	        calcStack.adsEffect        = incomingData.ads_effect;
-	        calcStack.budget           = incomingData.budget;
-	        calcStack.equipCoast       = incomingData.equip_coast;
-	        calcStack.adsCoast         = incomingData.ads_coast;
-	        calcStack.TObs             = math.round(math.eval("1 / equip_proposal", incomingData), 5);
-	        calcStack.mu               =  math.round(math.eval("1 / TObs", calcStack), 5);
-	        calcStack.maxEqiupCount    = math.round(math.eval("budget / equipCoast", calcStack), 0);
-	        calcStack.equipCoefficient = [];
-
-	        
-	        this._calcStack = calcStack;
-	    },
-	    getResult: function (adsCount, equipCount) {
-	        this._calcQTIndicators(); //определить входные параметры для расчета
-	            //добавить проверку входных данных
-	        var incomingData         = this._incomingData,
-	            calcStack            = this._calcStack, 
-	            cleanProfit;
-
-	            calcStack.adsCount   = adsCount;
-	            calcStack.equipCount = equipCount;
-	            
-	        calcStack.lambda  = math.round(math.eval("lambda + adsCount * adsEffect", calcStack), 0);
-	        calcStack.budget  = math.round(math.eval("budget - ((equipCount * equipCoast) + (adsCount * adsCoast))", calcStack), 2);
-	    /*   console.log(calcStack.budget);*/
-	        if (calcStack.budget <= 0 ) {
-	            /* console.log('Бюджет израсходован');*/
-	            return -1;
-	        }
-	        calcStack.rho = math.round(math.eval('lambda * TObs', calcStack), 5);
-	        if ((calcStack.rho / calcStack.equipCount) >= 1) {
-	            /* console.log('Очередь будет расти до бесконечности');*/
-	            return 0;
-	        }
-	        //расчет коэффициентов для вычисления P отказа
-	        for (var i = 1; i <= calcStack.maxEqiupCount; i++) {
-	                if (i === 1) {
-	                    calcStack.equipCoefficient[i] = math.round(math.eval("1 + rho ^ "+i+" / "+i+"!", calcStack), 5);
-	                    continue;
+	        _incomingData: {},
+	        _calcStack: {},
+	        init: function (obj) {
+	            for (i in obj) {
+	                obj[i] = parseInt(obj[i]);
+	                if (isNaN(obj[i])) {
+	                    alert('Only integer params');
+	                    return;
 	                }
-	            calcStack.equipCoefficient[i] = math.round(math.eval(calcStack.equipCoefficient[i-1]+" + rho ^ "+i+" / "+i+"!", calcStack), 5);
 	        }
-	        
-	        calcStack.RhoOtk = math.round(math.eval(calcStack.equipCoefficient[calcStack.equipCount]+"^-1"), 6);
-	        calcStack.RhoOch = math.round(math.eval("rho ^ (equipCount + 1) / equipCount! * (equipCount - rho) * RhoOtk", calcStack), 5);
-	        calcStack.LOch   = math.round(math.eval("(rho ^ (equipCount + 1) * RhoOtk) / (equipCount * equipCount! ) * (1 - rho / equipCount)^-2", calcStack), 5);
-	        calcStack.TOch   = math.round(math.eval("LOch / lambda", calcStack), 5);
-	        calcStack.LSyst  = math.round(math.eval("LOch + rho", calcStack), 5);
-	        calcStack.TSyst  = math.round(math.eval("LSyst / lambda", calcStack), 5);
+	        this._incomingData = obj;
+	        this.selectOptimalStrategy();
+	        },
+	        _poisson: function (lambda, count) { 
+	            var Limit = Math.exp(-lambda),
+	                answer, i;
+	            for (i = 0; i < count; i++) {
+	                var p = 0.1, k = 0;
+	                do {
+	                k++;
+	                p *= Math.random();
+	                console.log(k, p, Limit);
+	                } 
+	                while (p > Limit);
+	                answer[i] = k-1;
+	            }
+	            return answer;
+	        },
+	        _generateRandomTime: function (freq) {
+	            var proposalFreq = freq || 4,
+	                period       = 24 / proposalFreq,
+	                proposalTime = 0,
+	                i,
+	                timeLine     = [];
+	            for (i = 0; i < proposalFreq; i++) {
+	                proposalTime = math.round(math.random(period), 1);
+	                timeLine[i]  = proposalTime;
+	            }
+	            return timeLine;
+	        },
+	        _calcQTIndicators: function () {
+	            var incomingData = this._incomingData,
+	                calcStack    = this._calcStack;
 
-	        calcStack.moneyForDowntime = math.round(math.eval("(payForDowntime * TOch) * period",calcStack), 0);
-	        calcStack.profit           = math.round(math.eval("(LSyst * proposalIncome) * period",calcStack), 0);
-	        
-	        cleanProfit     = math.round(math.eval("profit - moneyForDowntime",calcStack), 0); //? включать ли в статистику оставшийся бюджет
+	            /*console.log(incomingData);*/
+	            calcStack.payForDowntime   = incomingData.pay_for_downtime;
+	            calcStack.period           = incomingData.period;
+	            calcStack.proposalIncome   = incomingData.proposal_income;
+	            calcStack.lambda           = incomingData.proposal_freq;
+	            calcStack.adsEffect        = incomingData.ads_effect;
+	            calcStack.budget           = incomingData.budget;
+	            calcStack.equipCoast       = incomingData.equip_coast;
+	            calcStack.adsCoast         = incomingData.ads_coast;
+	            calcStack.TObs             = math.round(math.eval("1 / equip_proposal", incomingData), 5);
+	            calcStack.mu               = math.round(math.eval("1 / TObs", calcStack), 5);
+	            calcStack.maxEqiupCount    = math.round(math.eval("budget / equipCoast", calcStack), 0);
+	            calcStack.equipCoefficient = [];
 
-	        this._calcStack = calcStack;
-	        
-	        return cleanProfit;
-	    },
+	            this._calcStack = calcStack;
+	        },
+	        _getResult: function (adsCount, equipCount) {
+	            this._calcQTIndicators(); //определить входные параметры для расчета
+	            for (var i in arguments) { 
+	                if ((typeof arguments[i] != "number") || (arguments[i] === Infinity) || (isNaN(arguments[i]))) {
+	                    throw "getResult`s args is not valid (only integer type)";
+	                }  
+	                arguments[i] = parseInt(arguments[i]);
+	            }
 
-	    selectOptimalStrategy: function () {
-	        var eqiupCount       = 0,
-	            adsCount         = 0,
-	            cache            = [],
-	            incomingData     = this._incomingData, number,
-	            maxAdsCount      = math.round(math.eval("budget / ads_coast", incomingData), 0),
-	            maxEquipCount    = math.round(math.eval("budget / equip_coast", incomingData), 0),
-	            optimalEquipment = 0,
-	            optimalAds       = 0,
-	            maxIncome        = 0;
+	            var incomingData         = this._incomingData,
+	                calcStack            = this._calcStack, 
+	                cleanProfit;
 
-	            for(adsCount = 0; adsCount < maxAdsCount ; adsCount++) {
-	                cache[adsCount] = [];
-	                for (eqiupCount = 1; eqiupCount <= maxEquipCount; eqiupCount++) {
-	                    cache[adsCount][eqiupCount] = this.getResult(adsCount, eqiupCount);
-	                    if (cache[adsCount][eqiupCount] == -1) {
+	                calcStack.adsCount   = adsCount;
+	                calcStack.equipCount = equipCount;
+	                
+	            calcStack.lambda  = math.round(math.eval("lambda + adsCount * adsEffect", calcStack), 0);
+	            /* console.log('Lambda', calcStack.lambda);*/
+	            calcStack.budget  = math.round(math.eval("budget - ((equipCount * equipCoast) + (adsCount * adsCoast))", calcStack), 2);
+	            /*   console.log(calcStack.budget);*/
+	            if (calcStack.budget <= 0 ) {
+	                /* console.log('Бюджет израсходован');*/
+	                return -1;
+	            }
+	            calcStack.rho = math.round(math.eval('lambda * TObs', calcStack), 5);
+	            if ((calcStack.rho / calcStack.equipCount) >= 1) {
+	                /* console.log('Очередь будет расти до бесконечности');*/
+	                return 0;
+	            }
+	            //расчет коэффициентов для вычисления P отказа
+	            for (var i = 1; i <= calcStack.maxEqiupCount; i++) {
+	                    if (i === 1) {
+	                        calcStack.equipCoefficient[i] = math.round(math.eval("1 + rho ^ "+i+" / "+i+"!", calcStack), 5);
+	                        continue;
+	                    }
+	                calcStack.equipCoefficient[i] = math.round(math.eval(calcStack.equipCoefficient[i-1]+" + rho ^ "+i+" / "+i+"! + rho ^ "+(i+1)+" / "+i+"! * ("+i+" - rho)", calcStack), 5);
+	            }
+	            
+	            calcStack.RhoOtk = math.round(math.eval(calcStack.equipCoefficient[calcStack.equipCount]+"^-1"), 6);
+	            calcStack.RhoOch = math.round(math.eval("rho ^ (equipCount + 1) / equipCount! * (equipCount - rho) * RhoOtk", calcStack), 5);
+	            calcStack.LOch   = math.round(math.eval("(rho ^ (equipCount + 1) * RhoOtk) / (equipCount * equipCount! ) * (1 - rho / equipCount)^-2", calcStack), 5);
+	            calcStack.TOch   = math.round(math.eval("LOch / lambda", calcStack), 5);
+	            calcStack.LSyst  = math.round(math.eval("LOch + rho", calcStack), 5);
+	            calcStack.TSyst  = math.round(math.eval("LSyst / lambda", calcStack), 5);
+
+	            calcStack.moneyForDowntime = math.round(math.eval("(payForDowntime * TOch) * period",calcStack), 0);
+	            calcStack.profit           = math.round(math.eval("(LSyst * proposalIncome) * period",calcStack), 0);
+	            
+	            cleanProfit     = math.round(math.eval("profit - moneyForDowntime",calcStack), 0); //? включать ли в статистику оставшийся бюджет
+
+	            this._calcStack = calcStack;
+	            
+	            return cleanProfit;
+	        },
+	        selectOptimalStrategy: function () {
+	            var eqiupCount       = 0,
+	                adsCount         = 0,
+	                cache            = [],
+	                incomingData     = this._incomingData, number,
+	                maxAdsCount      = math.round(math.eval("budget / ads_coast", incomingData), 0),
+	                maxEquipCount    = math.round(math.eval("budget / equip_coast", incomingData), 0),
+	                optimalEquipment = 0,
+	                optimalAds       = 0,
+	                maxIncome        = 0,
+	                answer           = {};
+
+	                for(adsCount = 0; adsCount < maxAdsCount; adsCount++) {
+	                    cache[adsCount] = [];
+	                    for (eqiupCount = 1; eqiupCount <= maxEquipCount; eqiupCount++) {
+	                        cache[adsCount][eqiupCount] = this._getResult(adsCount, eqiupCount);
+	                        if (cache[adsCount][eqiupCount] == -1) {
+	                            break;
+	                        }
+	                    }
+	                    if (cache[adsCount].length < 1) {
 	                        break;
 	                    }
 	                }
-	                if (cache[adsCount].length < 1) {
-	                    break;
-	                }
-	            }
 
-	            for (var i = 0; i < cache.length; i++) {
-	                for (var j = 0; j <= cache[i].length; j++) {
-	                    if (cache[i][j] > maxIncome) {
-	                        maxIncome=cache[i][j];
-	                        optimalAds=i;
-	                        optimalEquipment=j;
-	                    } 
-	                }
-	            }    
-	        
-	        console.log("Оптимальная стратегия равна: ", "Доход:", maxIncome, "Реклама", optimalAds, "Оборудование", optimalEquipment);
+	                for (var i = 0; i < cache.length; i++) {
+	                    for (var j = 0; j <= cache[i].length; j++) {
+	                        if (cache[i][j] > maxIncome) {
+	                            maxIncome=cache[i][j];
+	                            optimalAds=i;
+	                            optimalEquipment=j;
+	                        } 
+	                    }
+	                }    
 	            
-	        /* cache[0] = [];
-	            cache[0][1] = this.getResult(6, 2);
-	            cache[0][2] = this.getResult(0, 2);
-	            cache[0][3] = this.getResult(0, 3);
-	            cache[0][4] = this.getResult(0, 4);
-	            cache[1] = [];
-	            cache[1][0] = this.getResult(1, 0);
-	            cache[1][1] = this.getResult(1, 1);
-	            cache[1][2] = this.getResult(1, 2);
-	            cache[1][3] = this.getResult(1, 3);
-	            cache[2] = [];
-	            cache[2][0] = this.getResult(2, 0);
-	            cache[2][1] = this.getResult(2, 1);
-	            cache[2][2] = this.getResult(2, 2);
-	            cache[2][3] = this.getResult(2, 3);*/
-	    
-	        console.dir(cache);
-	        
-	    }
+	            console.log("Оптимальная стратегия равна: ", "Доход:", maxIncome, "Реклама", optimalAds, "Оборудование", optimalEquipment);
+	            console.dir(cache);
+	            answer = {
+	                maxIncome       : maxIncome,
+	                optimalAds      : optimalAds,
+	                optimalEquipment: optimalEquipment
+	            };
+	            this._getResult(optimalAds, optimalEquipment); //расчитать значения индикаторов по оптимальной стратегии (dummy_method)
+
+	            dataSet.trigger('optimalStrategy', answer);
+	            dataSet.trigger('QTIndicators', this._calcStack);
+	        },
+	        getQTIndicators: function () {
+	            dataSet.trigger('QTIndicators', this._calcStack);
+	        }
 	};
 
 
@@ -389,6 +386,50 @@
 	if(!a(t))throw new TypeError("Array with 3 numbers expected for second argument");return p(e[0],e[1],e[2],t[0],t[1],t[2])}throw new TypeError("Invalid Arguments: Try again")},"Object, Object":function(e,t){if(2==Object.keys(e).length&&3==Object.keys(t).length){if(!i(e))throw new TypeError("Values of pointX and pointY should be numbers");if(!a(t))throw new TypeError("Values of xCoeffLine, yCoeffLine and constant should be numbers");if(e.hasOwnProperty("pointX")&&e.hasOwnProperty("pointY")&&t.hasOwnProperty("xCoeffLine")&&t.hasOwnProperty("yCoeffLine")&&t.hasOwnProperty("yCoeffLine"))return c(e.pointX,e.pointY,t.xCoeffLine,t.yCoeffLine,t.constant);throw new TypeError("Key names do not match")}if(3==Object.keys(e).length&&6==Object.keys(t).length){if(!a(e))throw new TypeError("Values of pointX, pointY and pointZ should be numbers");if(!o(t))throw new TypeError("Values of x0, y0, z0, a, b and c should be numbers");if(e.hasOwnProperty("pointX")&&e.hasOwnProperty("pointY")&&t.hasOwnProperty("x0")&&t.hasOwnProperty("y0")&&t.hasOwnProperty("z0")&&t.hasOwnProperty("a")&&t.hasOwnProperty("b")&&t.hasOwnProperty("c"))return f(e.pointX,e.pointY,e.pointZ,t.x0,t.y0,t.z0,t.a,t.b,t.c);throw new TypeError("Key names do not match")}if(2==Object.keys(e).length&&2==Object.keys(t).length){if(!i(e))throw new TypeError("Values of pointOneX and pointOneY should be numbers");if(!i(t))throw new TypeError("Values of pointTwoX and pointTwoY should be numbers");if(e.hasOwnProperty("pointOneX")&&e.hasOwnProperty("pointOneY")&&t.hasOwnProperty("pointTwoX")&&t.hasOwnProperty("pointTwoY"))return l(e.pointOneX,e.pointOneY,t.pointTwoX,t.pointTwoY);throw new TypeError("Key names do not match")}if(3==Object.keys(e).length&&3==Object.keys(t).length){if(!a(e))throw new TypeError("Values of pointOneX, pointOneY and pointOneZ should be numbers");if(!a(t))throw new TypeError("Values of pointTwoX, pointTwoY and pointTwoZ should be numbers");if(e.hasOwnProperty("pointOneX")&&e.hasOwnProperty("pointOneY")&&e.hasOwnProperty("pointOneZ")&&t.hasOwnProperty("pointTwoX")&&t.hasOwnProperty("pointTwoY")&&t.hasOwnProperty("pointTwoZ"))return p(e.pointOneX,e.pointOneY,e.pointOneZ,t.pointTwoX,t.pointTwoY,t.pointTwoZ);throw new TypeError("Key names do not match")}throw new TypeError("Invalid Arguments: Try again")},Array:function(e){if(!u(e))throw new TypeError("Incorrect array format entered for pairwise distance calculation");return h(e)}}));return m}function i(e){return e.constructor!==Array&&(e=s(e)),"number"==typeof e[0]&&"number"==typeof e[1]}function a(e){return e.constructor!==Array&&(e=s(e)),"number"==typeof e[0]&&"number"==typeof e[1]&&"number"==typeof e[2]}function o(e){return e.constructor!==Array&&(e=s(e)),"number"==typeof e[0]&&"number"==typeof e[1]&&"number"==typeof e[2]&&"number"==typeof e[3]&&"number"==typeof e[4]&&"number"==typeof e[5]}function s(e){for(var t=Object.keys(e),r=[],n=0;n<t.length;n++)r.push(e[t[n]]);return r}function u(e){if(2==e[0].length&&"number"==typeof e[0][0]&&"number"==typeof e[0][1]){for(var t in e)if(2!=e[t].length||"number"!=typeof e[t][0]||"number"!=typeof e[t][1])return!1}else{if(3!=e[0].length||"number"!=typeof e[0][0]||"number"!=typeof e[0][1]||"number"!=typeof e[0][2])return!1;for(var t in e)if(3!=e[t].length||"number"!=typeof e[t][0]||"number"!=typeof e[t][1]||"number"!=typeof e[t][2])return!1}return!0}function c(e,t,r,n,i){var a=Math.abs(r*e+n*t+i),o=Math.pow(r*r+n*n,.5),s=a/o;return s}function f(e,t,r,n,i,a,o,s,u){var c=[(i-t)*u-(a-r)*s,(a-r)*o-(n-e)*u,(n-e)*s-(i-t)*o];c=Math.pow(c[0]*c[0]+c[1]*c[1]+c[2]*c[2],.5);var f=Math.pow(o*o+s*s+u*u,.5),l=c/f;return l}function l(e,t,r,n){var i=n-t,a=r-e,o=i*i+a*a,s=Math.pow(o,.5);return s}function p(e,t,r,n,i,a){var o=a-r,s=i-t,u=n-e,c=o*o+s*s+u*u,f=Math.pow(c,.5);return f}function h(e){for(var t=[],r=0;r<e.length-1;r++)for(var n=r+1;n<e.length;n++)2==e[0].length?t.push(l(e[r][0],e[r][1],e[n][0],e[n][1])):3==e[0].length&&t.push(p(e[r][0],e[r][1],e[r][2],e[n][0],e[n][1],e[n][2]));return t}t.name="distance",t.factory=n},function(e,t,r){e.exports=[r(429),r(430),r(432),r(433)]},function(e,t,r){"use strict";function n(e,t,n,i){var a=r(32),o=n(r(52)),s=n(r(390)),u=n(r(430)),c=(n(r(431)),n(r(370))),f=n(r(381)),l=n(r(85)),p=n(r(57)),h=n(r(58)),m=i("and",{"number, number":function(e,t){return!(!e||!t)},"Complex, Complex":function(e,t){return!(0===e.re&&0===e.im||0===t.re&&0===t.im)},"BigNumber, BigNumber":function(e,t){return!(e.isZero()||t.isZero()||e.isNaN()||t.isNaN())},"Unit, Unit":function(e,t){return m(e.value,t.value)},"Matrix, Matrix":function(e,t){var r;switch(e.storage()){case"sparse":switch(t.storage()){case"sparse":r=f(e,t,m,!1);break;default:r=c(t,e,m,!0)}break;default:switch(t.storage()){case"sparse":r=c(e,t,m,!1);break;default:r=p(e,t,m)}}return r},"Array, Array":function(e,t){return m(o(e),o(t)).valueOf()},"Array, Matrix":function(e,t){return m(o(e),t)},"Matrix, Array":function(e,t){return m(e,o(t))},"Matrix, any":function(e,t){if(u(t))return s(e.size(),e.storage());var r;switch(e.storage()){case"sparse":r=l(e,t,m,!1);break;default:r=h(e,t,m,!1)}return r},"any, Matrix":function(e,t){if(u(e))return s(e.size(),e.storage());var r;switch(t.storage()){case"sparse":r=l(t,e,m,!0);break;default:r=h(t,e,m,!0)}return r},"Array, any":function(e,t){return m(o(e),t).valueOf()},"any, Array":function(e,t){return m(e,o(t)).valueOf()}});return m.toTex={2:"\\left(${args[0]}"+a.operators.and+"${args[1]}\\right)"},m}t.name="and",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){var o=r(32),s=a("not",{number:function(e){return!e},Complex:function(e){return 0===e.re&&0===e.im},BigNumber:function(e){return e.isZero()||e.isNaN()},Unit:function(e){return s(e.value)},"Array | Matrix":function(e){return i(e,s)}});return s.toTex={1:o.operators.not+"\\left(${args[0]}\\right)"},s}var i=r(19);t.name="not",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("isZero",{number:function(e){return 0===e},BigNumber:function(e){return e.isZero()},Complex:function(e){return 0===e.re&&0===e.im},Fraction:function(e){return 1===e.d&&0===e.n},Unit:function(e){return a(e.value)},"Array | Matrix":function(e){return i(e,a)}});return a}var i=r(19);r(6);t.name="isZero",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,i){var a=r(32),o=n(r(52)),s=n(r(61)),u=n(r(79)),c=n(r(63)),f=n(r(57)),l=n(r(58)),p=i("or",{"number, number":function(e,t){return!(!e&&!t)},"Complex, Complex":function(e,t){return 0!==e.re||0!==e.im||0!==t.re||0!==t.im},"BigNumber, BigNumber":function(e,t){return!e.isZero()&&!e.isNaN()||!t.isZero()&&!t.isNaN()},"Unit, Unit":function(e,t){return p(e.value,t.value)},"Matrix, Matrix":function(e,t){var r;switch(e.storage()){case"sparse":switch(t.storage()){case"sparse":r=u(e,t,p);break;default:r=s(t,e,p,!0)}break;default:switch(t.storage()){case"sparse":r=s(e,t,p,!1);break;default:r=f(e,t,p)}}return r},"Array, Array":function(e,t){return p(o(e),o(t)).valueOf()},"Array, Matrix":function(e,t){return p(o(e),t)},"Matrix, Array":function(e,t){return p(e,o(t))},"Matrix, any":function(e,t){var r;switch(e.storage()){case"sparse":r=c(e,t,p,!1);break;default:r=l(e,t,p,!1)}return r},"any, Matrix":function(e,t){var r;switch(t.storage()){case"sparse":r=c(t,e,p,!0);break;default:r=l(t,e,p,!0)}return r},"Array, any":function(e,t){return l(o(e),t,p,!1).valueOf()},"any, Array":function(e,t){return l(o(t),e,p,!0).valueOf()}});return p.toTex={2:"\\left(${args[0]}"+a.operators.or+"${args[1]}\\right)"},p}t.name="or",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,i){var a=r(32),o=n(r(52)),s=n(r(61)),u=n(r(62)),c=n(r(63)),f=n(r(57)),l=n(r(58)),p=i("xor",{"number, number":function(e,t){return!!(!!e^!!t)},"Complex, Complex":function(e,t){return(0!==e.re||0!==e.im)!=(0!==t.re||0!==t.im)},"BigNumber, BigNumber":function(e,t){return(!e.isZero()&&!e.isNaN())!=(!t.isZero()&&!t.isNaN())},"Unit, Unit":function(e,t){return p(e.value,t.value)},"Matrix, Matrix":function(e,t){var r;switch(e.storage()){case"sparse":switch(t.storage()){case"sparse":r=u(e,t,p);break;default:r=s(t,e,p,!0)}break;default:switch(t.storage()){case"sparse":r=s(e,t,p,!1);break;default:r=f(e,t,p)}}return r},"Array, Array":function(e,t){return p(o(e),o(t)).valueOf()},"Array, Matrix":function(e,t){return p(o(e),t)},"Matrix, Array":function(e,t){return p(e,o(t))},"Matrix, any":function(e,t){var r;switch(e.storage()){case"sparse":r=c(e,t,p,!1);break;default:r=l(e,t,p,!1)}return r},"any, Matrix":function(e,t){var r;switch(t.storage()){case"sparse":r=c(t,e,p,!0);break;default:r=l(t,e,p,!0)}return r},"Array, any":function(e,t){return l(o(e),t,p,!1).valueOf()},"any, Array":function(e,t){return l(o(t),e,p,!0).valueOf()}});return p.toTex={2:"\\left(${args[0]}"+a.operators.xor+"${args[1]}\\right)"},p}t.name="xor",t.factory=n},function(e,t,r){e.exports=[r(311),r(435),r(329),r(436),r(437),r(83),r(313),r(438),r(315),r(328),r(318),r(439),r(440),r(333),r(442),r(443),r(444),r(445),r(286),r(387),r(345),r(390)]},function(e,t,r){"use strict";function n(e,t,n,a){function o(e,t){var r=Math.max(i.size(e).length,i.size(t).length);e=i.squeeze(e),t=i.squeeze(t);var n=i.size(e),a=i.size(t);if(1!=n.length||1!=a.length||3!=n[0]||3!=a[0])throw new RangeError("Vectors with length 3 expected (Size A = ["+n.join(", ")+"], B = ["+a.join(", ")+"])");var o=[u(c(e[1],t[2]),c(e[2],t[1])),u(c(e[2],t[0]),c(e[0],t[2])),u(c(e[0],t[1]),c(e[1],t[0]))];return r>1?[o]:o}var s=n(r(52)),u=n(r(77)),c=n(r(84)),f=a("cross",{"Matrix, Matrix":function(e,t){return s(o(e.toArray(),t.toArray()))},"Matrix, Array":function(e,t){return s(o(e.toArray(),t))},"Array, Matrix":function(e,t){return s(o(e,t.toArray()))},"Array, Array":o});return f.toTex={2:"\\left(${args[0]}\\right)\\times\\left(${args[1]}\\right)"},f}var i=r(40);t.name="cross",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){function s(e,t,r,n){if(!a(t))throw new TypeError("Second parameter in function diag must be an integer");var i=t>0?t:0,o=0>t?-t:0;switch(r.length){case 1:return u(e,t,n,r[0],o,i);case 2:return c(e,t,n,r,o,i)}throw new RangeError("Matrix for function diag must be 2 dimensional")}function u(t,r,n,i,a,o){var s=[i+a,i+o],u=e.Matrix.storage(n||"dense"),c=u.diagonal(s,t,r);return null!==n?c:c.valueOf()}function c(e,t,r,n,i,a){if(e&&e.isMatrix===!0){var o=e.diagonal(t);return null!==r?r!==o.storage()?f(o,r):o:o.valueOf()}for(var s=Math.min(n[0]-i,n[1]-a),u=[],c=0;s>c;c++)u[c]=e[c+i][c+a];return null!==r?f(u):u}var f=n(r(52)),l=o("diag",{Array:function(e){return s(e,0,i.size(e),null)},"Array, number":function(e,t){return s(e,t,i.size(e),null)},"Array, BigNumber":function(e,t){return s(e,t.toNumber(),i.size(e),null)},"Array, string":function(e,t){return s(e,0,i.size(e),t)},"Array, number, string":function(e,t,r){return s(e,t,i.size(e),r)},"Array, BigNumber, string":function(e,t,r){return s(e,t.toNumber(),i.size(e),r)},Matrix:function(e){return s(e,0,e.size(),e.storage())},"Matrix, number":function(e,t){return s(e,t,e.size(),e.storage())},"Matrix, BigNumber":function(e,t){return s(e,t.toNumber(),e.size(),e.storage())},"Matrix, string":function(e,t){return s(e,0,e.size(),t)},"Matrix, number, string":function(e,t,r){return s(e,t,e.size(),r)},"Matrix, BigNumber, string":function(e,t,r){return s(e,t.toNumber(),e.size(),r)}});return l.toTex=void 0,l}var i=r(40),a=(r(3).clone,r(6).isInteger);t.name="diag",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){function o(e,t){var r=i(e),n=i(t),a=r[0];if(1!==r.length||1!==n.length)throw new RangeError("Vector expected");if(r[0]!=n[0])throw new RangeError("Vectors must have equal length ("+r[0]+" != "+n[0]+")");if(0==a)throw new RangeError("Cannot calculate the dot product of empty vectors");for(var o=0,c=0;a>c;c++)o=s(o,u(e[c],t[c]));return o}var s=n(r(51)),u=n(r(84)),c=a("dot",{"Matrix, Matrix":function(e,t){return o(e.toArray(),t.toArray())},"Matrix, Array":function(e,t){return o(e.toArray(),t)},"Array, Matrix":function(e,t){return o(e,t.toArray())},"Array, Array":o});return c.toTex={2:"\\left(${args[0]}\\cdot${args[1]}\\right)"},c}var i=r(40).size;t.name="dot",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){var s=n(r(52)),u=o("flatten",{Array:function(e){return a(i(e))},Matrix:function(e){var t=a(i(e.toArray()));return s(t)}});return u.toTex=void 0,u}var i=r(3).clone,a=r(40).flatten;t.name="flatten",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){function s(t,r){var n=u(t),i=n?new e.BigNumber(1):1;if(c(t),r){var o=f(r);return t.length>0?o.resize(t,i):o}var s=[];return t.length>0?a(s,t,i):s}function u(e){var t=!1;return e.forEach(function(e,r,n){e&&e.isBigNumber===!0&&(t=!0,n[r]=e.toNumber())}),t}function c(e){e.forEach(function(e){if("number"!=typeof e||!i(e)||0>e)throw new Error("Parameters in function ones must be positive integers")})}var f=n(r(52)),l=o("ones",{"":function(){return"Array"===t.matrix?s([]):s([],"default")},"...number | BigNumber | string":function(e){var r=e[e.length-1];if("string"==typeof r){var n=e.pop();return s(e,n)}return"Array"===t.matrix?s(e):s(e,"default")},Array:s,Matrix:function(e){var t=e.storage();return s(e.valueOf(),t)},"Array | Matrix, string":function(e,t){return s(e.valueOf(),t)}});return l.toTex=void 0,l}var i=r(6).isInteger,a=r(40).resize;t.name="ones",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){function o(e,t){return-c(e,t)}function s(e,t,r){if(!i(t)||0>t)throw new Error("k must be a non-negative integer");if(e&&e.isMatrix){var n=e.size();if(n.length>1)throw new Error("Only one dimensional matrices supported");return u(e.valueOf(),t,r)}return Array.isArray(e)?u(e,t,r):void 0}function u(e,t,r){if(t>=e.length)throw new Error("k out of bounds");for(var n=0,i=e.length-1;i>n;){for(var a=n,o=i,s=e[Math.floor(Math.random()*(i-n+1))+n];o>a;)if(r(e[a],s)>=0){var u=e[o];e[o]=e[a],e[a]=u,--o}else++a;r(e[a],s)>0&&--a,a>=t?i=a:n=a+1}return e[t]}var c=n(r(441));return a("partitionSelect",{"Array | Matrix, number":function(e,t){return s(e,t,c)},"Array | Matrix, number, string":function(e,t,r){if("asc"===r)return s(e,t,c);if("desc"===r)return s(e,t,o);throw new Error('Compare string must be "asc" or "desc"')},"Array | Matrix, number, function":s})}var i=r(6).isInteger;t.name="partitionSelect",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){var s=n(r(52)),u=n(r(61)),c=n(r(79)),f=n(r(63)),l=n(r(57)),p=n(r(58)),h=o("compare",{"boolean, boolean":function(e,t){return e===t?0:e>t?1:-1},"number, number":function(e,r){return e===r||i(e,r,t.epsilon)?0:e>r?1:-1},"BigNumber, BigNumber":function(r,n){return r.eq(n)||a(r,n,t.epsilon)?new e.BigNumber(0):new e.BigNumber(r.cmp(n))},"Fraction, Fraction":function(t,r){return new e.Fraction(t.compare(r))},"Complex, Complex":function(){throw new TypeError("No ordering relation is defined for complex numbers")},"Unit, Unit":function(e,t){if(!e.equalBase(t))throw new Error("Cannot compare units with different base");return h(e.value,t.value)},"string, string":function(e,t){return e===t?0:e>t?1:-1},"Matrix, Matrix":function(e,t){var r;switch(e.storage()){case"sparse":switch(t.storage()){case"sparse":r=c(e,t,h);break;default:r=u(t,e,h,!0)}break;default:switch(t.storage()){case"sparse":r=u(e,t,h,!1);break;default:r=l(e,t,h)}}return r},"Array, Array":function(e,t){return h(s(e),s(t)).valueOf()},"Array, Matrix":function(e,t){return h(s(e),t)},"Matrix, Array":function(e,t){return h(e,s(t))},"Matrix, any":function(e,t){var r;switch(e.storage()){case"sparse":r=f(e,t,h,!1);break;default:r=p(e,t,h,!1)}return r},"any, Matrix":function(e,t){var r;switch(t.storage()){case"sparse":r=f(t,e,h,!0);break;default:r=p(t,e,h,!0)}return r},"Array, any":function(e,t){return p(s(e),t,h,!1).valueOf()},"any, Array":function(e,t){return p(s(t),e,h,!0).valueOf()}});return h.toTex=void 0,h}var i=r(6).nearlyEqual,a=r(49);t.name="compare",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,f){function l(e,t,r){if(void 0!==r){if("string"!=typeof r||1!==r.length)throw new TypeError("Single character expected as defaultValue")}else r=" ";if(1!==t.length)throw new i(t.length,1);var n=t[0];if("number"!=typeof n||!o(n))throw new TypeError("Invalid size, must contain positive integers (size: "+s(t)+")");if(e.length>n)return e.substring(0,n);if(e.length<n){for(var a=e,u=0,c=n-e.length;c>u;u++)a+=r;return a}return e}var p=n(r(52)),h=function(e,r,n){if(2!=arguments.length&&3!=arguments.length)throw new a("resize",arguments.length,2,3);if(r&&r.isMatrix===!0&&(r=r.valueOf()),r.length&&r[0]&&r[0].isBigNumber===!0&&(r=r.map(function(e){return e&&e.isBigNumber===!0?e.toNumber():e})),e&&e.isMatrix===!0)return e.resize(r,n,!0);if("string"==typeof e)return l(e,r,n);var i=Array.isArray(e)?!1:"Array"!==t.matrix;if(0==r.length){for(;Array.isArray(e);)e=e[0];return u(e)}Array.isArray(e)||(e=[e]),e=u(e);var o=c.resize(e,r,n);return i?p(o):o};return h.toTex=void 0,h}var i=r(42),a=r(11),o=r(6).isInteger,s=r(23).format,u=r(3).clone,c=r(40);t.name="resize",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){var o=n(r(52)),s=a("size",{Matrix:function(e){return o(e.size())},Array:i.size,string:function(e){return"Array"===t.matrix?[e.length]:o([e.length])},"number | Complex | BigNumber | Unit | boolean | null":function(e){return"Array"===t.matrix?[]:o([])}});return s.toTex=void 0,s}var i=r(40);t.name="size",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){function o(e){if("asc"===e)return f;if("desc"===e)return l;throw new Error('String "asc" or "desc" expected')}function s(e){if(1!==i(e).length)throw new Error("One dimensional array expected")}function u(e){if(1!==e.size().length)throw new Error("One dimensional matrix expected")}var c=n(r(52)),f=n(r(441)),l=function(e,t){return-f(e,t)},p=a("sort",{Array:function(e){return s(e),e.sort(f)},Matrix:function(e){return u(e),c(e.toArray().sort(f),e.storage())},"Array, function":function(e,t){return s(e),e.sort(t)},"Matrix, function":function(e,t){return u(e),c(e.toArray().sort(t),e.storage())},"Array, string":function(e,t){return s(e),e.sort(o(t))},"Matrix, string":function(e,t){return u(e),c(e.toArray().sort(o(t)),e.storage())}});return p.toTex=void 0,p}var i=r(40).size;t.name="sort",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){var s=n(r(52)),u=o("squeeze",{Array:function(e){return a.squeeze(i.clone(e))},Matrix:function(e){var t=a.squeeze(e.toArray());return Array.isArray(t)?s(t):t},any:function(e){return i.clone(e)}});return u.toTex=void 0,u}var i=r(3),a=r(40);t.name="squeeze",t.factory=n},function(e,t,r){e.exports=[r(416),r(414),r(415),r(447),r(449),r(450),r(451),r(453),r(454)]},function(e,t,r){"use strict";function n(e,t,n,i){function a(e,t){var r=t.size().length,n=e.size().length;if(r>1)throw new Error("first object must be one dimensional");if(n>1)throw new Error("second object must be one dimensional");if(r!==n)throw new Error("Length of two vectors must be equal");var i=u(e);if(0===i)throw new Error("Sum of elements in first object must be non zero");var a=u(t);if(0===a)throw new Error("Sum of elements in second object must be non zero");var o=s(e,u(e)),h=s(t,u(t)),m=u(c(o,l(f(o,h))));return p(m)?m:Number.NaN}var o=n(r(52)),s=n(r(327)),u=n(r(448)),c=n(r(84)),f=n(r(369)),l=n(r(383)),p=n(r(89)),h=i("kldivergence",{"Array, Array":function(e,t){return a(o(e),o(t))},"Matrix, Array":function(e,t){return a(e,o(t))},"Array, Matrix":function(e,t){return a(o(e),t)},"Matrix, Matrix":function(e,t){return a(e,t)}});return h}t.name="kldivergence",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){function o(r){var n=void 0;if(i(r,function(e){n=void 0===n?e:s(n,e)}),void 0===n)switch(t.number){case"number":return 0;case"BigNumber":return new e.BigNumber(0);case"Fraction":return new e.Fraction(0);default:return 0}return n}var s=n(r(53)),u=a("sum",{"Array | Matrix":function(e){return o(e)},"Array | Matrix, number | BigNumber":function(){throw new Error("sum(A, dim) is not yet supported")},"...":function(e){return o(e)}});return u.toTex=void 0,u}var i=r(322);t.name="sum",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){var o=n(r(51)),s=n(r(84)),u=n(r(327)),c=n(r(414)),f=n(r(417)),l=n(r(379));return a("multinomial",{"Array | Matrix":function(e){var t=0,r=1;return i(e,function(e){if(!f(e)||!l(e))throw new TypeError("Positive integer value expected in function multinomial");t=o(t,e),r=s(r,c(e))}),u(c(t),r)}})}var i=r(322);t.name="multinomial",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){var s=n(r(414)),u=o("permutations",{"number | BigNumber":s,"number, number":function(e,t){var r,n;if(!a(e)||0>e)throw new TypeError("Positive integer value expected in function permutations");if(!a(t)||0>t)throw new TypeError("Positive integer value expected in function permutations");if(t>e)throw new TypeError("second argument k must be less than or equal to first argument n");for(r=1,n=e-t+1;e>=n;n++)r*=n;return r},"BigNumber, BigNumber":function(t,r){var n,a;if(!i(t)||!i(r))throw new TypeError("Positive integer value expected in function permutations");if(r.gt(t))throw new TypeError("second argument k must be less than or equal to first argument n");for(n=new e.BigNumber(1),a=t.minus(r).plus(1);a.lte(t);a=a.plus(1))n=n.times(a);return n}});return u.toTex=void 0,u}function i(e){return e.isInteger()&&e.gte(0)}var a=r(6).isInteger;t.name="permutations",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,i){var a=n(r(452)),o=a("uniform").pickRandom;return o.toTex=void 0,o}t.name="pickRandom",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,s){function u(e){if(!l.hasOwnProperty(e))throw new Error("Unknown distribution "+e);var t=Array.prototype.slice.call(arguments,1),r=l[e].apply(this,t);return function(e){var t={random:function(e,t,r){var s,u,f;if(arguments.length>3)throw new i("random",arguments.length,0,3);if(1===arguments.length?a(e)?s=e:f=e:2===arguments.length?a(e)?(s=e,f=t):(u=e,f=t):(s=e,u=t,f=r),void 0!==u&&!o(u)||void 0!==f&&!o(f))throw new TypeError("Invalid argument in function random");if(void 0===f&&(f=1),void 0===u&&(u=0),void 0!==s){var p=l(s.valueOf(),u,f,n);return s&&s.isMatrix===!0?c(p):p}return n(u,f)},randomInt:s({"number | Array":function(e){var t=0;if(a(e)){var r=e,n=1,i=l(r.valueOf(),t,n,u);return r&&r.isMatrix===!0?c(i):i}var n=e;return u(t,n)},"number | Array, number":function(e,t){if(a(e)){var r=e,n=t,i=0,o=l(r.valueOf(),i,n,u);return r&&r.isMatrix===!0?c(o):o}var i=e,n=t;return u(i,n)},"Array, number, number":function(e,t,r){var n=l(e.valueOf(),t,r,u);return e&&e.isMatrix===!0?c(n):n}}),pickRandom:s({Array:function(e){return r(e)},"Array, number | Array":function(e,t){var n,i;if(Array.isArray(t))i=t;else{if(!o(t))throw new TypeError("Invalid argument in function pickRandom");n=t}return r(e,n,i)},"Array, number | Array, Array | number":function(e,t,n){var i,a;if(Array.isArray(t)?(a=t,i=n):(a=n,i=t),!Array.isArray(a)||!o(i))throw new TypeError("Invalid argument in function pickRandom");return r(e,i,a)}})},r=function(e,t,r){var n="undefined"==typeof t;if(n&&(t=1),e&&e.isMatrix===!0)e=e.valueOf();else if(!Array.isArray(e))throw new TypeError("Unsupported type of value in function pickRandom");if(f.size(e).length>1)throw new Error("Only one dimensional vectors supported");if("undefined"!=typeof r){if(r.length!=e.length)throw new Error("Weights must have the same length as possibles");for(var i=0,a=0,s=r.length;s>a;a++){if(!o(r[a])||r[a]<0)throw new Error("Weights must be an array of positive numbers");i+=r[a]}}var u=e.length;if(0==u)return[];if(t>=u)return e;for(var c,l=[];l.length<t;){if("undefined"==typeof r)c=e[Math.floor(Math.random()*u)];else for(var p=Math.random()*i,a=0,s=e.length;s>a;a++)if(p-=r[a],0>p){c=e[a];break}-1==l.indexOf(c)&&l.push(c)}return n?l[0]:l},n=function(t,r){return t+e()*(r-t)},u=function(t,r){return Math.floor(t+e()*(r-t))},l=function(e,t,r,n){var i,a,o=[];if(e=e.slice(0),e.length>1)for(var a=0,i=e.shift();i>a;a++)o.push(l(e,t,r,n));else for(var a=0,i=e.shift();i>a;a++)o.push(n(t,r));return o};return t}(r)}var c=n(r(52)),f=r(40),l={uniform:function(){return Math.random},normal:function(){return function(){for(var e,t,r=-1;0>r||r>1;)e=Math.random(),t=Math.random(),r=1/6*Math.pow(-2*Math.log(e),.5)*Math.cos(2*Math.PI*t)+.5;return r}}};return u.toTex=void 0,u}var i=r(11),a=r(320),o=r(6).isNumber;t.name="distribution",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,i){var a=n(r(452)),o=a("uniform").random;return o.toTex=void 0,o}t.name="random",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,i){var a=n(r(452)),o=a("uniform").randomInt;return o.toTex=void 0,o}t.name="randomInt",t.factory=n},function(e,t,r){e.exports=[r(441),r(456),r(88),r(64),r(352),r(60),r(457),r(458)]},function(e,t,r){"use strict";function n(e,t,n,i){function a(e,t){if(Array.isArray(e)){if(Array.isArray(t)){var r=e.length;if(r!==t.length)return!1;for(var n=0;r>n;n++)if(!a(e[n],t[n]))return!1;return!0}return!1}return Array.isArray(t)?!1:o(e,t)}var o=n(r(88)),s=i("deepEqual",{"any, any":function(e,t){return a(e.valueOf(),t.valueOf())}});return s.toTex=void 0,s}t.name="deepEqual",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){var s=n(r(52)),u=n(r(61)),c=n(r(62)),f=n(r(63)),l=n(r(57)),p=n(r(58)),h=r(32),m=o("smallerEq",{"boolean, boolean":function(e,t){return t>=e},"number, number":function(e,r){return r>=e||i(e,r,t.epsilon)},"BigNumber, BigNumber":function(e,r){return e.lte(r)||a(e,r,t.epsilon)},"Fraction, Fraction":function(e,t){return 1!==e.compare(t)},"Complex, Complex":function(){throw new TypeError("No ordering relation is defined for complex numbers")},"Unit, Unit":function(e,t){if(!e.equalBase(t))throw new Error("Cannot compare units with different base");return m(e.value,t.value)},"string, string":function(e,t){return t>=e},"Matrix, Matrix":function(e,t){var r;switch(e.storage()){case"sparse":switch(t.storage()){case"sparse":r=c(e,t,m);break;default:r=u(t,e,m,!0)}break;default:switch(t.storage()){case"sparse":r=u(e,t,m,!1);break;default:r=l(e,t,m)}}return r},"Array, Array":function(e,t){return m(s(e),s(t)).valueOf()},"Array, Matrix":function(e,t){return m(s(e),t)},"Matrix, Array":function(e,t){return m(e,s(t))},"Matrix, any":function(e,t){var r;switch(e.storage()){case"sparse":r=f(e,t,m,!1);break;default:r=p(e,t,m,!1)}return r},"any, Matrix":function(e,t){var r;switch(t.storage()){case"sparse":r=f(t,e,m,!0);break;default:r=p(t,e,m,!0)}return r},"Array, any":function(e,t){return p(s(e),t,m,!1).valueOf()},"any, Array":function(e,t){return p(s(t),e,m,!0).valueOf()}});return m.toTex={2:"\\left(${args[0]}"+h.operators.smallerEq+"${args[1]}\\right)"},m}var i=r(6).nearlyEqual,a=r(49);t.name="smallerEq",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){var s=n(r(52)),u=n(r(61)),c=n(r(62)),f=n(r(63)),l=n(r(57)),p=n(r(58)),h=r(32),m=o("unequal",{"any, any":function(e,t){return null===e?null!==t:null===t?null!==e:void 0===e?void 0!==t:void 0===t?void 0!==e:d(e,t)},"Matrix, Matrix":function(e,t){var r;switch(e.storage()){case"sparse":switch(t.storage()){case"sparse":r=c(e,t,d);break;default:r=u(t,e,d,!0)}break;default:switch(t.storage()){case"sparse":r=u(e,t,d,!1);break;default:r=l(e,t,d)}}return r},"Array, Array":function(e,t){return m(s(e),s(t)).valueOf()},"Array, Matrix":function(e,t){return m(s(e),t)},"Matrix, Array":function(e,t){return m(e,s(t))},"Matrix, any":function(e,t){var r;switch(e.storage()){case"sparse":r=f(e,t,d,!1);break;default:r=p(e,t,d,!1)}return r},"any, Matrix":function(e,t){var r;switch(t.storage()){case"sparse":r=f(t,e,d,!0);break;default:r=p(t,e,d,!0)}return r},"Array, any":function(e,t){return p(s(e),t,d,!1).valueOf()},"any, Array":function(e,t){return p(s(t),e,d,!0).valueOf()}}),d=o("_unequal",{"boolean, boolean":function(e,t){return e!==t},"number, number":function(e,r){return!i(e,r,t.epsilon)},"BigNumber, BigNumber":function(e,r){return!a(e,r,t.epsilon)},"Fraction, Fraction":function(e,t){return!e.equals(t)},"Complex, Complex":function(e,t){return!e.equals(t)},"Unit, Unit":function(e,t){if(!e.equalBase(t))throw new Error("Cannot compare units with different base");return m(e.value,t.value)},"string, string":function(e,t){return e!==t}});return m.toTex={2:"\\left(${args[0]}"+h.operators.unequal+"${args[1]}\\right)"},m}var i=r(6).nearlyEqual,a=r(49);t.name="unequal",t.factory=n},function(e,t,r){e.exports=[r(460)]},function(e,t,r){"use strict";function n(e,t,r,n){function l(e){var t,r=e*e,n=u[0][4]*r,i=r;for(t=0;3>t;t+=1)n=(n+u[0][t])*r,i=(i+c[0][t])*r;return e*(n+u[0][3])/(i+c[0][3])}function p(e){var t,r=u[1][8]*e,n=e;for(t=0;7>t;t+=1)r=(r+u[1][t])*e,n=(n+c[1][t])*e;var i=(r+u[1][7])/(n+c[1][7]),a=parseInt(16*e)/16,o=(e-a)*(e+a);return Math.exp(-a*a)*Math.exp(-o)*i}function h(e){var t,r=1/(e*e),n=u[2][5]*r,i=r;for(t=0;4>t;t+=1)n=(n+u[2][t])*r,i=(i+c[2][t])*r;var a=r*(n+u[2][4])/(i+c[2][4]);a=(s-a)/e,r=parseInt(16*e)/16;var o=(e-r)*(e+r);return Math.exp(-r*r)*Math.exp(-o)*a}var m=n("erf",{number:function(e){var t=Math.abs(e);return t>=f?a(e):o>=t?a(e)*l(t):4>=t?a(e)*(1-p(t)):a(e)*(1-h(t))},BigNumber:function(t){return new e.BigNumber(m(t.toNumber()))},"Array | Matrix":function(e){return i(e,m)}});return m.toTex={1:"erf\\left(${args[0]}\\right)"},m}var i=r(19),a=r(6).sign,o=.46875,s=.5641895835477563,u=[[3.1611237438705655,113.86415415105016,377.485237685302,3209.3775891384694,.18577770618460315],[.5641884969886701,8.883149794388377,66.11919063714163,298.6351381974001,881.952221241769,1712.0476126340707,2051.0783778260716,1230.3393547979972,2.1531153547440383e-8],[.30532663496123236,.36034489994980445,.12578172611122926,.016083785148742275,.0006587491615298378,.016315387137302097]],c=[[23.601290952344122,244.02463793444417,1282.6165260773723,2844.236833439171],[15.744926110709835,117.6939508913125,537.1811018620099,1621.3895745666903,3290.7992357334597,4362.619090143247,3439.3676741437216,1230.3393548037495],[2.568520192289822,1.8729528499234604,.5279051029514285,.06051834131244132,.0023352049762686918]],f=Math.pow(2,53);t.name="erf",t.factory=n},function(e,t,r){e.exports=[r(321),r(326),r(462),r(331),r(463),r(464),r(465),r(466),r(448),r(467)]},function(e,t,r){"use strict";function n(e,t,n,o){function s(e){e=i(e.valueOf());var t=e.length;if(0==t)throw new Error("Cannot calculate median of an empty array");if(t%2==0){for(var r=t/2-1,n=l(e,r+1),a=e[r],o=0;r>o;++o)f(e[o],a)>0&&(a=e[o]);return m(a,n)}var s=l(e,(t-1)/2);return h(s)}var u=n(r(53)),c=n(r(81)),f=n(r(441)),l=n(r(440)),p=o("median",{"Array | Matrix":s,"Array | Matrix, number | BigNumber":function(e,t){throw new Error("median(A, dim) is not yet supported")},"...":function(e){if(a(e))throw new TypeError("Scalar values expected in function median");return s(e)}}),h=o({"number | BigNumber | Unit":function(e){return e}}),m=o({"number | BigNumber | Unit, number | BigNumber | Unit":function(e,t){return c(u(e,t),2)}});return p.toTex=void 0,p}var i=r(40).flatten,a=(r(323),r(324));t.name="median",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){function a(e){e=i(e.valueOf());var t=e.length;if(0==t)throw new Error("Cannot calculate mode of an empty array");var r={},n=[],a=0;for(var o in e)e[o]in r||(r[e[o]]=0),r[e[o]]++,r[e[o]]==a?n.push(e[o]):r[e[o]]>a&&(a=r[e[o]],n=[e[o]]);return n}var o=n("mode",{"Array | Matrix":a,"...":function(e){return a(e)}});return o}var i=r(40).flatten;t.name="mode",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){function o(e){var t=void 0;if(i(e,function(e){t=void 0===t?e:s(t,e)}),void 0===t)throw new Error("Cannot calculate prod of an empty array");return t}var s=n(r(80)),u=a("prod",{"Array | Matrix":o,"Array | Matrix, number | BigNumber":function(e,t){throw new Error("prod(A, dim) is not yet supported")},"...":function(e){return o(e)}});return u.toTex=void 0,u}var i=r(322);t.name="prod",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,u){function c(t,r,n){var o,u,c;if(arguments.length<2||arguments.length>3)throw new SyntaxError("Function quantileSeq requires two or three parameters");if(s(t)){if(n=n||!1,"boolean"==typeof n){if(u=t.valueOf(),a(r)){if(0>r)throw new Error("N/prob must be non-negative");
 	if(1>=r)return f(u,r,n);if(r>1){if(!i(r))throw new Error("N must be a positive integer");var l=r+1;o=new Array(r);for(var p=0;r>p;)o[p]=f(u,++p/l,n);return o}}if(r&&r.isBigNumber){if(r.isNegative())throw new Error("N/prob must be non-negative");if(c=new r.constructor(1),r.lte(c))return f(u,r,n);if(r.gt(c)){if(!r.isInteger())throw new Error("N must be a positive integer");var h=r.toNumber();if(h>4294967295)throw new Error("N must be less than or equal to 2^32-1, as that is the maximum length of an Array");var l=new e.BigNumber(h+1);o=new Array(h);for(var p=0;h>p;)o[p]=f(u,new e.BigNumber(++p).div(l),n);return o}}if(Array.isArray(r)){o=new Array(r.length);for(var p=0;p<o.length;++p){var m=r[p];if(a(m)){if(0>m||m>1)throw new Error("Probability must be between 0 and 1, inclusive")}else{if(!m||!m.isBigNumber)throw new TypeError("Unexpected type of argument in function quantileSeq");if(c=new m.constructor(1),m.isNegative()||m.gt(c))throw new Error("Probability must be between 0 and 1, inclusive")}o[p]=f(u,m,n)}return o}throw new TypeError("Unexpected type of argument in function quantileSeq")}throw new TypeError("Unexpected type of argument in function quantileSeq")}throw new TypeError("Unexpected type of argument in function quantileSeq")}function f(e,t,r){var n=o(e),i=n.length;if(0===i)throw new Error("Cannot calculate quantile of an empty sequence");if(a(t)){var s=t*(i-1),u=s%1;if(0===u){var c=r?n[s]:h(n,s);return d(c),c}var f,g,v=Math.floor(s);if(r)f=n[v],g=n[v+1];else{g=h(n,v+1),f=n[v];for(var y=0;v>y;++y)m(n[y],f)>0&&(f=n[y])}return d(f),d(g),l(p(f,1-u),p(g,u))}var s=t.times(i-1);if(s.isInteger()){s=s.toNumber();var c=r?n[s]:h(n,s);return d(c),c}var f,g,v=s.floor(),u=s.minus(v),x=v.toNumber();if(r)f=n[x],g=n[x+1];else{g=h(n,x+1),f=n[x];for(var y=0;x>y;++y)m(n[y],f)>0&&(f=n[y])}d(f),d(g);var b=new u.constructor(1);return l(p(f,b.minus(u)),p(g,u))}var l=n(r(51)),p=n(r(84)),h=n(r(440)),m=n(r(441)),d=u({"number | BigNumber | Unit":function(e){return e}});return c}var i=r(6).isInteger,a=r(6).isNumber,o=r(40).flatten,s=r(320);t.name="quantileSeq",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,i){function a(e,t){if(0==e.length)throw new SyntaxError("Function std requires one or more parameters (0 provided)");return o(s.apply(null,arguments))}var o=n(r(378)),s=n(r(467)),u=i("std",{"Array | Matrix":a,"Array | Matrix, string":a,"...":function(e){return a(e)}});return u.toTex=void 0,u}t.name="std",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,o){function s(t,r){var n=0,i=0;if(0==t.length)throw new SyntaxError("Function var requires one or more parameters (0 provided)");if(a(t,function(e){n=u(n,e),i++}),0===i)throw new Error("Cannot calculate var of an empty array");var o=l(n,i);switch(n=0,a(t,function(e){var t=c(e,o);n=u(n,f(t,t))}),r){case"uncorrected":return l(n,i);case"biased":return l(n,i+1);case"unbiased":var s=n&&n.isBigNumber===!0?new e.BigNumber(0):0;return 1==i?s:l(n,i-1);default:throw new Error('Unknown normalization "'+r+'". Choose "unbiased" (default), "uncorrected", or "biased".')}}var u=n(r(53)),c=n(r(77)),f=n(r(80)),l=n(r(81)),p=o("variance",{"Array | Matrix":function(e){return s(e,i)},"Array | Matrix, string":s,"...":function(e){return s(e,i)}});return p.toTex="\\mathrm{Var}\\left(${args}\\right)",p}var i="unbiased",a=r(322);t.name="var",t.factory=n},function(e,t,r){e.exports=[r(90),r(469)]},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("print",{"string, Object":i,"string, Object, number | Object":i});return a.toTex=void 0,a}function i(e,t,r){return e.replace(/\$([\w\.]+)/g,function(e,n){for(var i=n.split("."),s=t[i.shift()];i.length&&void 0!==s;){var u=i.shift();s=u?s[u]:s+"."}return void 0!==s?a(s)?s:o(s,r):e})}var a=r(23).isString,o=r(23).format;t.name="print",t.factory=n},function(e,t,r){e.exports=[r(471),r(472),r(473),r(474),r(475),r(476),r(477),r(478),r(479),r(480),r(481),r(482),r(483),r(484),r(485),r(486),r(487),r(488),r(489),r(490),r(491),r(492),r(493),r(494),r(495)]},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("acos",{number:function(r){return r>=-1&&1>=r||t.predictable?Math.acos(r):new e.Complex(r,0).acos()},Complex:function(e){return e.acos()},BigNumber:function(e){return e.acos()},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\cos^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="acos",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("acosh",{number:function(r){return r>=1||t.predictable?a(r):-1>=r?new e.Complex(Math.log(Math.sqrt(r*r-1)-r),Math.PI):new e.Complex(r,0).acosh()},Complex:function(e){return e.acosh()},BigNumber:function(e){return e.acosh()},"Array | Matrix":function(e){return i(e,o)}});return o.toTex={1:"\\cosh^{-1}\\left(${args[0]}\\right)"},o}var i=r(19),a=Math.acosh||function(e){return Math.log(Math.sqrt(e*e-1)+e)};t.name="acosh",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("acot",{number:function(e){return Math.atan(1/e)},Complex:function(e){return e.acot()},BigNumber:function(t){return new e.BigNumber(1).div(t).atan()},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\cot^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="acot",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("acoth",{number:function(r){return r>=1||-1>=r||t.predictable?isFinite(r)?(Math.log((r+1)/r)+Math.log(r/(r-1)))/2:0:new e.Complex(r,0).acoth()},Complex:function(e){return e.acoth()},BigNumber:function(t){return new e.BigNumber(1).div(t).atanh()},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\coth^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="acoth",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("acsc",{number:function(r){return-1>=r||r>=1||t.predictable?Math.asin(1/r):new e.Complex(r,0).acsc()},Complex:function(e){return e.acsc()},BigNumber:function(t){return new e.BigNumber(1).div(t).asin()},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\csc^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="acsc",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("acsch",{number:function(e){return e=1/e,Math.log(e+Math.sqrt(e*e+1))},Complex:function(e){return e.acsch()},BigNumber:function(t){return new e.BigNumber(1).div(t).asinh()},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\mathrm{csch}^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="acsch",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("asec",{number:function(r){return-1>=r||r>=1||t.predictable?Math.acos(1/r):new e.Complex(r,0).asec()},Complex:function(e){return e.asec()},BigNumber:function(t){return new e.BigNumber(1).div(t).acos()},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\sec^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="asec",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,a){var o=(a.find(n(r(472)),["Complex"]),a("asech",{number:function(r){if(1>=r&&r>=-1||t.predictable){r=1/r;var n=Math.sqrt(r*r-1);return r>0||t.predictable?Math.log(n+r):new e.Complex(Math.log(n-r),Math.PI)}return new e.Complex(r,0).asech()},Complex:function(e){return e.asech()},BigNumber:function(t){return new e.BigNumber(1).div(t).acosh()},"Array | Matrix":function(e){return i(e,o)}}));return o.toTex={1:"\\mathrm{sech}^{-1}\\left(${args[0]}\\right)"},o}var i=r(19);t.name="asech",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("asin",{number:function(r){return r>=-1&&1>=r||t.predictable?Math.asin(r):new e.Complex(r,0).asin()},Complex:function(e){return e.asin()},BigNumber:function(e){return e.asin()},"Array | Matrix":function(e){return i(e,a,!0)}});return a.toTex={1:"\\sin^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="asin",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("asinh",{number:Math.asinh||function(e){return Math.log(Math.sqrt(e*e+1)+e)},Complex:function(e){return e.asinh()},BigNumber:function(e){return e.asinh()},"Array | Matrix":function(e){return i(e,a,!0)}});return a.toTex={1:"\\sinh^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="asinh",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("atan",{number:function(e){return Math.atan(e)},Complex:function(e){return e.atan()},BigNumber:function(e){return e.atan()},"Array | Matrix":function(e){return i(e,a,!0)}});return a.toTex={1:"\\tan^{-1}\\left(${args[0]}\\right)"},a}var i=r(19);t.name="atan",t.factory=n},function(e,t,r){"use strict";function n(e,t,n,i){var a=n(r(52)),o=n(r(370)),s=n(r(61)),u=n(r(372)),c=n(r(85)),f=n(r(63)),l=n(r(57)),p=n(r(58)),h=i("atan2",{"number, number":Math.atan2,"BigNumber, BigNumber":function(t,r){return e.BigNumber.atan2(t,r)},"Matrix, Matrix":function(e,t){var r;switch(e.storage()){case"sparse":switch(t.storage()){case"sparse":r=u(e,t,h,!1);break;default:r=o(t,e,h,!0)}break;default:switch(t.storage()){case"sparse":r=s(e,t,h,!1);break;default:r=l(e,t,h)}}return r},"Array, Array":function(e,t){return h(a(e),a(t)).valueOf()},"Array, Matrix":function(e,t){return h(a(e),t)},"Matrix, Array":function(e,t){return h(e,a(t))},"Matrix, number | BigNumber":function(e,t){var r;switch(e.storage()){case"sparse":r=c(e,t,h,!1);break;default:r=p(e,t,h,!1)}return r},"number | BigNumber, Matrix":function(e,t){var r;switch(t.storage()){case"sparse":r=f(t,e,h,!0);break;default:r=p(t,e,h,!0)}return r},"Array, number | BigNumber":function(e,t){return p(a(e),t,h,!1).valueOf()},"number | BigNumber, Array":function(e,t){return p(a(t),e,h,!0).valueOf()}});return h.toTex={2:"\\mathrm{atan2}\\left(${args}\\right)"},h}t.name="atan2",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("atanh",{number:function(r){return 1>=r&&r>=-1||t.predictable?a(r):new e.Complex(r,0).atanh()},Complex:function(e){return e.atanh()},BigNumber:function(e){return e.atanh()},"Array | Matrix":function(e){return i(e,o,!0)}});return o.toTex={1:"\\tanh^{-1}\\left(${args[0]}\\right)"},o}var i=r(19),a=Math.atanh||function(e){return Math.log((1+e)/(1-e))/2};t.name="atanh",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("cos",{number:Math.cos,Complex:function(e){return e.cos()},BigNumber:function(e){return e.cos()},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function cos is no angle");return a(t.value)},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\cos\\left(${args[0]}\\right)"},a}var i=r(19);t.name="cos",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("cosh",{number:a,Complex:function(e){return e.cosh()},BigNumber:function(e){return e.cosh()},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function cosh is no angle");return o(t.value)},"Array | Matrix":function(e){return i(e,o)}});return o.toTex={1:"\\cosh\\left(${args[0]}\\right)"},o}var i=r(19),a=Math.cosh||function(e){return(Math.exp(e)+Math.exp(-e))/2};t.name="cosh",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("cot",{number:function(e){return 1/Math.tan(e)},Complex:function(e){return e.cot()},BigNumber:function(t){return new e.BigNumber(1).div(t.tan())},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function cot is no angle");return a(t.value)},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\cot\\left(${args[0]}\\right)"},a}var i=r(19);t.name="cot",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("coth",{number:i,Complex:function(e){return e.coth()},BigNumber:function(t){return new e.BigNumber(1).div(t.tanh())},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function coth is no angle");return o(t.value)},"Array | Matrix":function(e){return a(e,o)}});return o.toTex={1:"\\coth\\left(${args[0]}\\right)"},o}function i(e){var t=Math.exp(2*e);return(t+1)/(t-1)}var a=r(19);t.name="coth",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("csc",{number:function(e){return 1/Math.sin(e)},Complex:function(e){return e.csc()},BigNumber:function(t){return new e.BigNumber(1).div(t.sin())},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function csc is no angle");return a(t.value)},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\csc\\left(${args[0]}\\right)"},a}var i=r(19);t.name="csc",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("csch",{number:i,Complex:function(e){return e.csch()},BigNumber:function(t){return new e.BigNumber(1).div(t.sinh())},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function csch is no angle");return o(t.value)},"Array | Matrix":function(e){return a(e,o)}});return o.toTex={1:"\\mathrm{csch}\\left(${args[0]}\\right)"},o}function i(e){return 0==e?Number.POSITIVE_INFINITY:Math.abs(2/(Math.exp(e)-Math.exp(-e)))*o(e)}var a=r(19),o=r(6).sign;t.name="csch",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("sec",{number:function(e){return 1/Math.cos(e)},Complex:function(e){return e.sec()},BigNumber:function(t){return new e.BigNumber(1).div(t.cos())},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function sec is no angle");return a(t.value)},"Array | Matrix":function(e){return i(e,a)}});return a.toTex={1:"\\sec\\left(${args[0]}\\right)"},a}var i=r(19);t.name="sec",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("sech",{number:i,Complex:function(e){return e.sech()},BigNumber:function(t){return new e.BigNumber(1).div(t.cosh())},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function sech is no angle");return o(t.value)},"Array | Matrix":function(e){return a(e,o)}});return o.toTex={1:"\\mathrm{sech}\\left(${args[0]}\\right)"},o}function i(e){return 2/(Math.exp(e)+Math.exp(-e))}var a=r(19);t.name="sech",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("sin",{number:Math.sin,Complex:function(e){return e.sin()},BigNumber:function(e){return e.sin()},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function sin is no angle");return a(t.value)},"Array | Matrix":function(e){return i(e,a,!0)}});return a.toTex={1:"\\sin\\left(${args[0]}\\right)"},a}var i=r(19);t.name="sin",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("sinh",{number:a,Complex:function(e){return e.sinh()},BigNumber:function(e){return e.sinh()},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function sinh is no angle");return o(t.value)},"Array | Matrix":function(e){return i(e,o,!0)}});return o.toTex={1:"\\sinh\\left(${args[0]}\\right)"},o}var i=r(19),a=Math.sinh||function(e){return(Math.exp(e)-Math.exp(-e))/2};t.name="sinh",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("tan",{number:Math.tan,Complex:function(e){return e.tan()},BigNumber:function(e){return e.tan()},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function tan is no angle");return a(t.value)},"Array | Matrix":function(e){return i(e,a,!0)}});return a.toTex={1:"\\tan\\left(${args[0]}\\right)"},a}var i=r(19);t.name="tan",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var o=n("tanh",{number:a,Complex:function(e){return e.tanh()},BigNumber:function(e){return e.tanh()},Unit:function(t){if(!t.hasBase(e.Unit.BASE_UNITS.ANGLE))throw new TypeError("Unit in function tanh is no angle");return o(t.value)},"Array | Matrix":function(e){return i(e,o,!0)}});return o.toTex={1:"\\tanh\\left(${args[0]}\\right)"},o}var i=r(19),a=Math.tanh||function(e){var t=Math.exp(2*e);return(t-1)/(t+1)};t.name="tanh",t.factory=n},function(e,t,r){e.exports=[r(497)]},function(e,t,r){"use strict";function n(e,t,n,i){var a=r(32),o=n(r(52)),s=n(r(57)),u=n(r(58)),c=i("to",{"Unit, Unit | string":function(e,t){return e.to(t)},"Matrix, Matrix":function(e,t){return s(e,t,c)},"Array, Array":function(e,t){return c(o(e),o(t)).valueOf()},"Array, Matrix":function(e,t){return c(o(e),t)},"Matrix, Array":function(e,t){return c(e,o(t))},"Matrix, any":function(e,t){return u(e,t,c,!1)},"any, Matrix":function(e,t){return u(t,e,c,!0)},"Array, any":function(e,t){return u(o(e),t,c,!1).valueOf()},"any, Array":function(e,t){return u(o(t),e,c,!0).valueOf()}});return c.toTex={2:"\\left(${args[0]}"+a.operators.to+"${args[1]}\\right)"},c}t.name="to",t.factory=n},function(e,t,r){e.exports=[r(499),r(417),r(366),r(89),r(379),r(500),r(431),r(501),r(91)]},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("clone",{any:i.clone});return a.toTex=void 0,a}var i=r(3);t.name="clone",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("isPrime",{number:function(e){if(2>e)return!1;if(2==e)return!0;if(e%2==0)return!1;for(var t=3;e>=t*t;t+=2)if(e%t==0)return!1;return!0},BigNumber:function(t){if(t.lt(2))return!1;if(t.equals(2))return!0;if(t.mod(2).isZero())return!1;for(var r=e.BigNumber(3);r.times(r).lte(t);r=r.plus(1))if(t.mod(r).isZero())return!1;return!0},"Array | Matrix":function(e){return i(e,a)}});return a}var i=r(19);t.name="isPrime",t.factory=n},function(e,t,r){"use strict";function n(e,t,r,n){var a=n("isNaN",{number:function(e){return Number.isNaN(e)},BigNumber:function(e){return e.isNaN()},Fraction:function(e){return!1},Complex:function(e){return Number.isNaN(e.re)&&Number.isNaN(e.im)},Unit:function(e){return Number.isNaN(e.value)},"Array | Matrix":function(e){return i(e,Number.isNaN)}});return a}var i=r(19);r(6);t.name="isNaN",t.factory=n},function(e,t,r){e.exports=[r(503)]},function(e,t){"use strict";function r(e,t,r,n){return function(t,r){var n=e[r&&r.mathjs];return n&&"function"==typeof n.fromJSON?n.fromJSON(r):r}}t.name="reviver",t.path="json",t.factory=r},function(e,t,r){"use strict";var n=r(11),i=r(42),a=r(43);e.exports=[{name:"ArgumentsError",path:"error",factory:function(){return n}},{name:"DimensionError",path:"error",factory:function(){return i}},{name:"IndexError",path:"error",factory:function(){return a}}]}])});
 	//# sourceMappingURL=math.map
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $       = __webpack_require__ (1),
+	    dataSet = __webpack_require__(3);
+
+	var _viewer = {
+	       createQTIndicatorsTable: function (QTI) {
+	           var tableContainer = $('.answer_block .QTIndicatorsTable'),
+	               table, qt = QTI;
+	           table = '<table class="QTindicators"><tr><th>Показатели эффективности работы системы</th><th> Литерал </th><th> Значение </th></tr>';
+	           table+= '<tr><td>Интенсивность поступления заявок</td><td>&lambda;</td><td>'+qt.lambda+'</td></tr>';
+	           table+= '<tr><td>Коэффициент загрузки оборудования</td><td>&rho;</td><td>'+qt.rho+'</td></tr>';
+	           table+= '<tr><td>Вероятность отсутствия требований в системе</td><td>&Rho;<sub>отк.</sub></td><td>'+qt.RhoOtk+'</td></tr>';
+	           table+= '<tr><td>Вероятность, что заявка окажется в очереди</td><td>&Rho;<sub>оч.</sub></td><td>'+qt.RhoOch+'</td></tr>';
+	           table+= '<tr><td>Среднее число заявок в очереди</td><td>L<sub>оч.</sub></td><td>'+qt.LOch+'</td></tr>';
+	           table+= '<tr><td>Среднее время ожидания заявки в очереди</td><td>T<sub>оч.</sub></td><td>'+qt.TOch+'</td></tr>';
+	           table+= '<tr><td>Среднее число заявок в системе</td><td>L<sub>сист.</sub></td><td>'+qt.LSyst+'</td></tr>';
+	           table+= '<tr><td>Среднее время пребывания заявки в системе</td><td>T<sub>сист.</sub></td><td>'+qt.TSyst+'</td></tr>';
+	           table+= '</table>';
+	           tableContainer.empty();
+	           tableContainer.append(table);
+	       },
+	       answerOut: function (data) {
+	           var answerContainer = $('.answer_block .optimal_strategy'),
+	               answer = data, html, notIncome;
+	            notIncome = '<span> При данном сочетании параметров любая стратегия убыточна</span>';
+	            if (answer.maxIncome === 0) {
+	                answerContainer.empty();
+	                answerContainer.append(notIncome);
+	                return;
+	            }
+	            html  = '<h4>Проанализировав все возможные варианты получим:</h4>';   
+	            html += '<span class="equipment">При количестве оборудования = <b>'+answer.optimalEquipment+'</b></span>';
+	            html += '<span class="ads">Проведя при этом <b>'+answer.optimalAds+'</b> рекламные кампании </span>';
+	            html += '<span class="income">Получим максимальную прибыль = <b>'+answer.maxIncome+' ₽</b></span>';
+	            answerContainer.empty();
+	            answerContainer.append(html);
+	       } 
+	}
+
+	module.exports = _viewer;
 
 /***/ }
 /******/ ]);

@@ -30,7 +30,7 @@
               </div>
               <div class="layout row"> 
                  <div class=" layout col-sm-12 col-xs-12 col-md-12 bs-center">
-                     <div><h3> Период (д)</h3> <input type="number" name="period" value="30"></div>
+                     <div class="last_input_block"><h3> Период (д)</h3> <input type="number" name="period" value="30"></div>
                  </div>
               </div>
               <div class="layout row"> 
@@ -43,10 +43,24 @@
         <fieldset class="result">
           <legend> Решение </legend>
            <div class="row">
-             <div class="col-sm-6 col-xs-6 col-md-6">
+             <div class="col-sm-12 col-xs-12 col-md-12">
                <div class="show_data">
-               <h3> Входные данные </h3>
-               <p class="lambda">&lambda; =  </p>
+               <h3> Расчет показателей </h3>
+               <p>Данный вид Системы Массового обслуживания можно охарактеризовать, как:<strong> Одноканальная СМО с неограниченной очередью. </strong>
+                  Такой вид СМО можно представить в виде графа</p><div class="graph"></div> <p> Расчитывать оптимальное количество оборудования и рекламы будем по следующим формулам:</p>
+                <p>Вероятность того, в системе отсутствуют заявки, по формуле <img class="nm" src="img/rhootk.gif"></p>
+                <p>Вероятность того, что заявка окажется в очереди <img src="img/rhooch.gif"></p>
+                <p>среднее число занятых каналов <img src="img/rho.gif"></p>
+                <p>среднее число заявок в очереди <img src="img/loch.gif"></p>
+                <p>среднее число заявок в системе <img src="img/lsyst.gif"></p> 
+           </div>
+           <div class="row">
+             <div class="col-sm-12 col-sx-12 col-md-12 bs-center">
+                <div class="answer_block">
+                  <div class="QTIndicatorsTable"></div>
+                  <div class="optimal_strategy"></div>
+                </div>
+             </div>
              </div>
            </div>
         </fieldset>

@@ -29,6 +29,11 @@ legend {
     padding: 2px;
     text-align: center;
     height: 120px;
+    box-shadow: 6px -2px 10px #b9b9b9;
+}
+
+.incoming_data .last_input_block {
+    margin: 10px 44px 0px 44px !important;
 }
 
 .incoming_data input {
@@ -42,4 +47,108 @@ legend {
 
 .incoming_data button {
     margin: 30px 0px 0px 0px;
+}
+
+.result {
+    display: none;
+} 
+
+.result.visible {
+    display: block;
+
+}
+
+.result h3 {
+   text-align: center;
+}
+
+.result p {
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+.result p img {
+    margin-left: 10px;
+}
+
+.result p img.nm{
+    margin-left: 0;
+}
+
+.graph {
+    height: 210px;
+    width: 95%;
+    background: url("img/graph.png") no-repeat 50% 0%;
+    margin: 0px 0px 0px 15px;
+    box-shadow: 6px -2px 10px #b9b9b9;
+}
+
+.answer_block {
+    display: inline-block;
+    padding: 40px 0px 40px 0px;
+}
+
+.QTIndicatorsTable {
+    display:inline-block;
+}
+
+table {
+    font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+    font-size: 14px;
+    border-radius: 10px;
+    border-spacing: 0;
+    text-align: center;
+}
+
+th {
+    background: #969e9c;
+    color: white;
+    text-shadow: 0 1px 1px #2D2020;
+    padding: 10px 20px;
+}
+
+th, td {
+    border-style: solid;
+    border-width: 0 1px 1px 0;
+    border-color: white;
+}
+
+th:first-child, td:first-child {
+    text-align: left;
+}
+
+th:first-child {
+    border-top-left-radius: 10px;
+}
+
+th:last-child {
+    border-top-right-radius: 10px;
+    border-right: none;
+}
+
+td {
+    padding: 10px 20px;
+    background: #ececec;
+}
+
+tr:last-child td:first-child {
+    border-radius: 0 0 0 10px;
+}
+
+tr:last-child td:last-child {
+    border-radius: 0 0 10px 0;
+}
+
+tr td:last-child {
+    border-right: none;
+}
+
+.answer_block h4 {
+    font-size: 20px;
+}
+
+.answer_block span {
+    display: block;
+    text-align: center;
+    font-size: 20px;
 }
