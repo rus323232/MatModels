@@ -229,15 +229,15 @@
 	          calcStack.equipCount = equipCount;
 	           
 	      calcStack.lambda = math.round(math.eval("lambda + adsCount * adsEffect", calcStack), 0);
-	      calcStack.budget  = math.round(math.eval("budget - ((equipCount * equipCoast) - (adsCount * adsCoast))", calcStack), 2);
-
+	      calcStack.budget  = math.round(math.eval("budget - ((equipCount * equipCoast) + (adsCount * adsCoast))", calcStack), 2);
+	   /*   console.log(calcStack.budget);*/
 	      if (calcStack.budget <= 0 ) {
-	          console.log('Бюджет израсходован');
+	         /* console.log('Бюджет израсходован');*/
 	          return -1;
 	      }
 	      calcStack.rho = math.round(math.eval('lambda * TObs', calcStack), 5);
 	      if ((calcStack.rho / calcStack.equipCount) >= 1) {
-	          console.log('Очередь будет расти до бесконечности');
+	         /* console.log('Очередь будет расти до бесконечности');*/
 	          return 0;
 	      }
 
@@ -259,7 +259,7 @@
 	      calcStack.moneyForDowntime = math.round(math.eval("(payForDowntime * TOch) * period",calcStack), 0);
 	      calcStack.profit           = math.round(math.eval("(LSyst * proposalIncome) * period",calcStack), 0);
 
-	      cleanProfit      = math.round(math.eval("profit - moneyForDowntime + budget",calcStack), 0);
+	      cleanProfit      = math.round(math.eval("profit - moneyForDowntime",calcStack), 0); //? включать ли в статистику оставшийся бюджет
 
 	      this._calcStack = calcStack;
 	      
@@ -268,18 +268,50 @@
 
 	    selectOptimalStrategy: function () {
 	        var eqiupCount=0, adsCount = 0, cache = [], incomingData = this._incomingData, number,
-	             maxAdsCount = math.round(math.eval("budget / ads_coast", incomingData), 0);
+	             maxAdsCount = math.round(math.eval("budget / ads_coast", incomingData), 0),
+	             maxEquipCount = math.round(math.eval("budget / equip_coast", incomingData), 0),
+	             optimalEquipment = 0, optimalAds = 0, maxIncome = 0;
 
-	             do { 
+	             for(adsCount = 0; adsCount < maxAdsCount ; adsCount++) {
 	                 cache[adsCount] = [];
-	                 do {
-	                     eqiupCount++;
-	                    /* number = String(adsCount)+String(eqiupCount);*/
+	                 for (eqiupCount = 1; eqiupCount <= maxEquipCount; eqiupCount++) {
 	                     cache[adsCount][eqiupCount] = this.getResult(adsCount, eqiupCount);
-	                 } while (cache[adsCount][eqiupCount] != -1);
-	                 adsCount++;
-	                 eqiupCount = 0;
-	             } while (adsCount != 2);
+	                    if (cache[adsCount][eqiupCount] == -1) {
+	                        break;
+	                     }
+	                 }
+	                 if (cache[adsCount].length < 1) {
+	                     break;
+	                 }
+	             }
+
+	            for (var i = 0; i < cache.length; i++) {
+	                for (var j = 0; j <= cache[i].length; j++) {
+	                    if (cache[i][j] > maxIncome) {
+	                        maxIncome=cache[i][j];
+	                        optimalAds=i;
+	                        optimalEquipment=j;
+	                    } 
+	                }
+	            }    
+	           
+	           console.log("Оптимальная стратегия равна: ", "Доход:", maxIncome, "Реклама", optimalAds, "Оборудование", optimalEquipment);
+	            
+	          /* cache[0] = [];
+	            cache[0][1] = this.getResult(6, 2);
+	            cache[0][2] = this.getResult(0, 2);
+	              cache[0][3] = this.getResult(0, 3);
+	               cache[0][4] = this.getResult(0, 4);
+	            cache[1] = [];
+	            cache[1][0] = this.getResult(1, 0);
+	             cache[1][1] = this.getResult(1, 1);
+	              cache[1][2] = this.getResult(1, 2);
+	               cache[1][3] = this.getResult(1, 3);
+	             cache[2] = [];
+	            cache[2][0] = this.getResult(2, 0);
+	             cache[2][1] = this.getResult(2, 1);
+	              cache[2][2] = this.getResult(2, 2);
+	               cache[2][3] = this.getResult(2, 3);*/
 	     
 	        console.dir(cache);
 	        
