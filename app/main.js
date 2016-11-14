@@ -1,17 +1,23 @@
-const {app, BrowserWindow, Tray, Menu} = require('electron');
+const {app, BrowserWindow, Tray, Menu, MenuItem} = require('electron');
 
 let win, tray, calc;
 
-
 function createWindow () {
-  win = new BrowserWindow({icon: "icon.png"});
+  win = new BrowserWindow({icon: "icon.png", minWidth: 770, resizable: false});
 
   win.loadURL(`file://${__dirname}/index.html`);
-  win.webContents.openDevTools();
 
   win.on('closed', () => {
     win = null
   });
+
+  win.once('ready-to-show', () => {
+    let checkbox = getElementsByClassName('show_console');
+    checkbox.onchange = function () {
+      alert('ok');
+    }
+
+});
 }
 
 app.on('ready', createWindow);

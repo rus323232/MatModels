@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "main": "main.js",
   "scripts": {
-    "start" : "webpack && electron ."
+    "start" : "webpack && electron .",
+    "build" : "electron-packager . myApp --all --version=0.33.3 --app-version=0.1.0 --out=builds/ --ignore=dist --prune"
   },
   "author": "UrakovRS"
 }

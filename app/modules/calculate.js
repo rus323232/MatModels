@@ -3,7 +3,7 @@ var math = require('math'),
 
 var _calculate = {
         _incomingData: {},
-        _calcStack: {},
+        _calcStack: [],
         init: function (obj) {
             for (i in obj) {
                 obj[i] = parseInt(obj[i]);
@@ -44,7 +44,8 @@ var _calculate = {
         },
         _calcQTIndicators: function () {
             var incomingData = this._incomingData,
-                calcStack    = this._calcStack;
+                calcStack    = [];
+            this._calcStack.splice(0, this._calcStack.length); // refresh QTIndicators stack
 
             /*console.log(incomingData);*/
             calcStack.payForDowntime   = incomingData.pay_for_downtime;
@@ -57,7 +58,7 @@ var _calculate = {
             calcStack.adsCoast         = incomingData.ads_coast;
             calcStack.TObs             = math.round(math.eval("1 / equip_proposal", incomingData), 5);
             calcStack.mu               = math.round(math.eval("1 / TObs", calcStack), 5);
-            calcStack.maxEqiupCount    = math.round(math.eval("budget / equipCoast", calcStack), 0);
+            calcStack.maxEqiupCount    = math.round(math.eval("budget / equip_coast", incomingData), 0);
             calcStack.equipCoefficient = [];
 
             this._calcStack = calcStack;
@@ -107,12 +108,15 @@ var _calculate = {
             calcStack.LSyst  = math.round(math.eval("LOch + rho", calcStack), 5);
             calcStack.TSyst  = math.round(math.eval("LSyst / lambda", calcStack), 5);
 
-            calcStack.moneyForDowntime = math.round(math.eval("(payForDowntime * TOch) * period",calcStack), 0);
-            calcStack.profit           = math.round(math.eval("(LSyst * proposalIncome) * period",calcStack), 0);
+            calcStack.moneyForDowntime = math.round(math.eval("payForDowntime * TOch * period * lambda",calcStack), 0);
+            calcStack.profit           = math.round(math.eval("LSyst * proposalIncome * period * lambda",calcStack), 0);
             
             cleanProfit     = math.round(math.eval("profit - moneyForDowntime",calcStack), 0); //? включать ли в статистику оставшийся бюджет
 
             this._calcStack = calcStack;
+            console.log('При оборуд. = ', equipCount, 'И рекламе равной  ', adsCount);
+            console.log('Индикаторы равны');
+            console.dir(this._calcStack);
             
             return cleanProfit;
         },
@@ -151,8 +155,8 @@ var _calculate = {
                     }
                 }    
             
-            console.log("Оптимальная стратегия равна: ", "Доход:", maxIncome, "Реклама", optimalAds, "Оборудование", optimalEquipment);
-            console.dir(cache);
+/*            console.log("Оптимальная стратегия равна: ", "Доход:", maxIncome, "Реклама", optimalAds, "Оборудование", optimalEquipment);
+              console.dir(cache);*/ 
             answer = {
                 maxIncome       : maxIncome,
                 optimalAds      : optimalAds,
