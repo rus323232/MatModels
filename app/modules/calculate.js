@@ -175,7 +175,7 @@ var _calculate = {
             };
             this._getResult(optimalAds, optimalEquipment); //расчитать значения индикаторов по оптимальной стратегии (dummy_method)
 
-            dataSet.trigger('optinpmalStrategy', answer);
+            dataSet.trigger('optimalStrategy', answer);
             dataSet.trigger('QTIndicators', this._calcStack);
         },
         getQTIndicators: function () {

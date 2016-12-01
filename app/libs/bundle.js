@@ -155,7 +155,7 @@
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var math = __webpack_require__(5),
+	var math    = __webpack_require__(5),
 	    dataSet = __webpack_require__(3);
 
 	var _calculate = {
@@ -170,7 +170,7 @@
 	                }
 	        }
 	        this._incomingData = obj;
-	        this.selectOptimalStrategy();
+	        this.selectOptimalStrategy(); //!!! not optimal eval 
 	        },
 	        _poisson: function (lambda, count) { 
 	            var Limit = Math.exp(-lambda),
@@ -204,7 +204,6 @@
 	                calcStack    = [];
 	            this._calcStack.splice(0, this._calcStack.length); // refresh QTIndicators stack
 
-	            /*console.log(incomingData);*/
 	            calcStack.payForDowntime   = incomingData.pay_for_downtime;
 	            calcStack.period           = incomingData.period;
 	            calcStack.proposalIncome   = incomingData.proposal_income;
@@ -214,7 +213,7 @@
 	            calcStack.equipCoast       = incomingData.equip_coast;
 	            calcStack.adsCoast         = incomingData.ads_coast;
 	            calcStack.TObs             = math.round(math.eval("1 / equip_proposal", incomingData), 5);
-	            calcStack.mu               = math.round(math.eval("1 / TObs", calcStack), 5);
+	            calcStack.mu               = incomingData.equip_proposal;
 	            calcStack.maxEqiupCount    = math.round(math.eval("budget / equip_coast", incomingData), 0);
 	            calcStack.equipCoefficient = [];
 
@@ -244,29 +243,41 @@
 	                /* console.log('Бюджет израсходован');*/
 	                return -1;
 	            }
-	            calcStack.rho = math.round(math.eval('lambda * TObs', calcStack), 5);
+	            calcStack.rho = math.round(math.eval('lambda / mu', calcStack), 5);
 	            if ((calcStack.rho / calcStack.equipCount) >= 1) {
 	                /* console.log('Очередь будет расти до бесконечности');*/
 	                return 0;
 	            }
 	            //расчет коэффициентов для вычисления P отказа
-	            for (var i = 1; i <= calcStack.maxEqiupCount; i++) {
+	            for (var i = 1; i <= equipCount; i++) {
+	                    if (i === 1) {
+	                        calcStack.equipCoefficient = math.round(math.eval("1 + rho ^ "+i+" / "+i+"!", calcStack), 5);
+	                        continue;
+	                    }
+	                    if (i === equipCount) {
+	                        calcStack.equipCoefficient = math.round(math.eval("equipCoefficient + rho ^ "+i+" / "+i+"! + rho ^ "+(i+1)+" / "+i+"! * ("+i+" - rho)", calcStack), 5);
+	                    }
+	                    calcStack.equipCoefficient = math.round(math.eval("equipCoefficient + rho ^ "+i+" / "+i+"!", calcStack), 5);
+	                
+	            }
+
+	       /*   for (var i = 1; i <= calcStack.maxEqiupCount; i++) {
 	                    if (i === 1) {
 	                        calcStack.equipCoefficient[i] = math.round(math.eval("1 + rho ^ "+i+" / "+i+"!", calcStack), 5);
 	                        continue;
 	                    }
 	                calcStack.equipCoefficient[i] = math.round(math.eval(calcStack.equipCoefficient[i-1]+" + rho ^ "+i+" / "+i+"! + rho ^ "+(i+1)+" / "+i+"! * ("+i+" - rho)", calcStack), 5);
-	            }
-	            
-	            calcStack.RhoOtk = math.round(math.eval(calcStack.equipCoefficient[calcStack.equipCount]+"^-1"), 6);
-	            calcStack.RhoOch = math.round(math.eval("rho ^ (equipCount + 1) / equipCount! * (equipCount - rho) * RhoOtk", calcStack), 5);
-	            calcStack.LOch   = math.round(math.eval("(rho ^ (equipCount + 1) * RhoOtk) / (equipCount * equipCount! ) * (1 - rho / equipCount)^-2", calcStack), 5);
+	            }*/
+	            //Вероятность, что канал свободен (доля времени простоя каналов).
+	            calcStack.RhoOtk = math.round(math.eval("equipCoefficient^(-1)", calcStack), 6);
+	            calcStack.RhoOch = math.round(math.eval("rho ^ (equipCount + 1) * RhoOtk / equipCount! * (equipCount - rho)", calcStack), 5);
+	            calcStack.LOch   = math.round(math.eval("equipCount * RhoOch / (equipCount - rho)", calcStack), 5);
 	            calcStack.TOch   = math.round(math.eval("LOch / lambda", calcStack), 5);
-	            calcStack.LSyst  = math.round(math.eval("LOch + rho", calcStack), 5);
+	            calcStack.LSyst  = math.round(math.eval("LOch + rho", calcStack), 5); // Среднее число заявок в системе (т.е. заявки, которые уже обслуживаются, и те, которые еще стоят в очереди и ждут обслуживания).
 	            calcStack.TSyst  = math.round(math.eval("LSyst / lambda", calcStack), 5);
 
-	            calcStack.moneyForDowntime = math.round(math.eval("payForDowntime * TOch * period * lambda",calcStack), 0);
-	            calcStack.profit           = math.round(math.eval("LSyst * proposalIncome * period * lambda",calcStack), 0);
+	            calcStack.moneyForDowntime = math.round(math.eval("payForDowntime * TOch * period",calcStack), 0);
+	            calcStack.profit           = math.round(math.eval("LSyst * proposalIncome * period",calcStack), 0);
 	            
 	            cleanProfit     = math.round(math.eval("profit - moneyForDowntime",calcStack), 0); //? включать ли в статистику оставшийся бюджет
 
@@ -427,7 +438,7 @@
 	            html  = '<h4>Проанализировав все возможные варианты получим:</h4>';   
 	            html += '<span class="equipment">При количестве оборудования = <b>'+answer.optimalEquipment+'</b></span>';
 	            html += '<span class="ads">Проведя при этом <b>'+answer.optimalAds+'</b> рекламные кампании </span>';
-	            html += '<span class="income">Получим максимальную прибыль = <b>'+answer.maxIncome+' ₽</b></span>';
+	            html += '<span class="income">Получим максимальную прибыль = <b>'+answer.maxIncome+' ₽</b> с одного станка.</span>';
 	            answerContainer.empty();
 	            answerContainer.append(html);
 	       } 
