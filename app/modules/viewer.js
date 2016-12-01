@@ -30,7 +30,7 @@ var _viewer = {
             html  = '<h4>Проанализировав все возможные варианты получим:</h4>';   
             html += '<span class="equipment">При количестве оборудования = <b>'+answer.optimalEquipment+'</b></span>';
             html += '<span class="ads">Проведя при этом <b>'+answer.optimalAds+'</b> рекламные кампании </span>';
-            html += '<span class="income">Получим максимальную прибыль = <b>'+answer.maxIncome+' ₽</b></span>';
+            html += '<span class="income">Получим максимальную прибыль = <b>'+answer.maxIncome+' ₽</b> с одного станка.</span>';
             answerContainer.empty();
             answerContainer.append(html);
        } 

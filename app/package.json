@@ -4,7 +4,7 @@
   "main": "main.js",
   "scripts": {
     "start" : "webpack && electron .",
-    "build" : "electron-packager . myApp --all --version=0.33.3 --app-version=0.1.0 --out=builds/ --ignore=dist --prune"
+    "build" : "electron-packager . lutask --all --version=0.33.3 --app-version=0.1.0 --out=dist --ignore=dist --prune"
   },
   "author": "UrakovRS"
 }
